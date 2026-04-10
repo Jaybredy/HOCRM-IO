@@ -278,6 +278,17 @@ export const base44 = {
   integrations,
   functions,
   appLogs,
+  // User management — inviteUser via Edge Function
+  users: {
+    async inviteUser(email, role, fullName) {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { email, role, full_name: fullName || '' },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+  },
 };
 
 // Also export the raw Supabase client for any direct usage needs
