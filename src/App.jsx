@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import Bookings from './pages/Bookings';
 import Login from './pages/Login';
+import AuthCallback from './pages/AuthCallback';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
@@ -75,6 +76,9 @@ function App() {
         <Routes>
           {/* Login route — accessible without authentication */}
           <Route path="/login" element={<Login />} />
+          {/* Auth callback — handles password recovery, magic links */}
+          <Route path="/auth/confirm" element={<AuthCallback />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
 
           {/* All other routes — wrapped in AuthProvider */}
           <Route
