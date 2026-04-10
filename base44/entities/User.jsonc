@@ -1,0 +1,24 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "admin",
+        "hotel_manager",
+        "sales_manager",
+        "EPIC_MANAGER",
+        "EPIC_ADMIN",
+        "EPIC_VIEWER"
+      ],
+      "default": "user"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Display name override for users without a full_name set"
+    }
+  },
+  "required": []
+}

@@ -1,0 +1,56 @@
+{
+  "name": "UserPropertyAccess",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user being granted access"
+    },
+    "property_id": {
+      "type": "string",
+      "description": "Reference to Hotel entity ID"
+    },
+    "role_at_property": {
+      "type": "string",
+      "enum": [
+        "hotel_manager",
+        "sales_manager",
+        "EPIC_MANAGER",
+        "EPIC_VIEWER"
+      ],
+      "description": "Role assigned at this property"
+    },
+    "access_level": {
+      "type": "string",
+      "enum": [
+        "VIEW",
+        "EDIT",
+        "MANAGE"
+      ],
+      "description": "Derived from role_at_property"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional expiry date (null = never expires)"
+    },
+    "granted_by": {
+      "type": "string",
+      "description": "Email of admin who granted this access"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this access grant is currently active"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Reason or notes for this access grant"
+    }
+  },
+  "required": [
+    "user_email",
+    "property_id",
+    "role_at_property"
+  ]
+}

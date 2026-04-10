@@ -1,0 +1,217 @@
+{
+  "name": "Task",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Task title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Task description"
+    },
+    "related_production_id": {
+      "type": "string",
+      "description": "Link to production item"
+    },
+    "related_client_id": {
+      "type": "string",
+      "description": "Link to client"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Who is responsible"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When task is due"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "todo",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "todo"
+    }
+  },
+  "required": [
+    "title",
+    "due_date"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "hotel_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "sales_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_MANAGER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_ADMIN"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_CONTRIBUTOR"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_VIEWER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "hotel_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "sales_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_MANAGER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_ADMIN"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_VIEWER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_CONTRIBUTOR"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "hotel_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "sales_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_MANAGER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_ADMIN"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_CONTRIBUTOR"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "hotel_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_MANAGER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_ADMIN"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    }
+  }
+}

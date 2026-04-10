@@ -281,10 +281,16 @@ export const base44 = {
   // User management — inviteUser via Edge Function
   users: {
     async inviteUser(email, role, fullName) {
-      const { data, error } = await supabase.functions.invoke('invite-user', {
+      const response = await supabase.functions.invoke('invite-user', {
         body: { email, role, full_name: fullName || '' },
       });
-      if (error) throw error;
+      console.log('invite-user response:', response);
+      const { data, error } = response;
+      if (error) {
+        // Try to extract message from the error
+        const msg = typeof error === 'object' ? (error.message || JSON.stringify(error)) : String(error);
+        throw new Error(msg);
+      }
       if (data?.error) throw new Error(data.error);
       return data;
     },

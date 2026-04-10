@@ -16,15 +16,30 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authUser = await getUserFromRequest(req);
-    const { supabaseAdmin } = getSupabaseClient(req);
+    const { supabaseUser, supabaseAdmin } = getSupabaseClient(req);
+
+    // Verify caller is authenticated
+    const { data: { user: authUser }, error: authErr } = await supabaseUser.auth.getUser();
+    if (authErr || !authUser) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', details: authErr?.message }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Check caller is admin
-    const { data: callerProfile } = await supabaseAdmin
+    const { data: callerProfile, error: profileErr } = await supabaseAdmin
       .from('users')
       .select('role')
       .eq('email', authUser.email)
       .single();
+
+    if (profileErr) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to load user profile', details: profileErr.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const callerRole = callerProfile?.role;
     if (callerRole !== 'admin' && callerRole !== 'EPIC_ADMIN' && callerRole !== 'hotel_manager') {

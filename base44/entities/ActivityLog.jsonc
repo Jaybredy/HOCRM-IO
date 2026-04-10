@@ -1,0 +1,257 @@
+{
+  "name": "ActivityLog",
+  "type": "object",
+  "properties": {
+    "hotel_id": {
+      "type": "string",
+      "description": "Reference to Hotel entity"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Reference to Client entity"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Name of the client (optional for non-client activities)"
+    },
+    "activity_type": {
+      "type": "string",
+      "enum": [
+        "solicitation_call",
+        "prospecting",
+        "sent_proposal",
+        "follow_up",
+        "site_inspection",
+        "network_event",
+        "tradeshow",
+        "client_entertainment",
+        "definite",
+        "other"
+      ],
+      "description": "Type of sales activity"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "solicitation_call",
+        "sent_proposal",
+        "follow_up",
+        "site_visit",
+        "tentative",
+        "definite",
+        "lost"
+      ],
+      "description": "Legacy status field (kept for backward compatibility)"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "website",
+        "direct",
+        "via_solicitation",
+        "cvb",
+        "other"
+      ],
+      "description": "How this activity/client was sourced"
+    },
+    "other_source_details": {
+      "type": "string",
+      "description": "Details if the source is 'other'"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "meeting_scheduled",
+        "qualified_lead",
+        "proposal_requested",
+        "no_interest",
+        "follow_up_required",
+        "converted",
+        "other"
+      ],
+      "description": "Outcome of the activity"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Activity notes"
+    },
+    "activity_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When this activity happened"
+    },
+    "seller_name": {
+      "type": "string",
+      "description": "Sales person who logged this"
+    }
+  },
+  "required": [
+    "hotel_id",
+    "activity_type",
+    "activity_date",
+    "seller_name",
+    "source"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "hotel_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "sales_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_MANAGER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_ADMIN"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_CONTRIBUTOR"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_VIEWER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "hotel_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "sales_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_MANAGER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_ADMIN"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_VIEWER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_CONTRIBUTOR"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "hotel_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "sales_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_MANAGER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_ADMIN"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_CONTRIBUTOR"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "hotel_manager"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_MANAGER"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "EPIC_ADMIN"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    }
+  }
+}
