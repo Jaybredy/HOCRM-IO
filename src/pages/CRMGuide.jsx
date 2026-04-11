@@ -6,7 +6,7 @@ const sections = [
   {
     id: 'getting-started',
     title: 'Getting Started',
-    content: `## Welcome to EPIC Sales CRM
+    content: `## Welcome to GBSales-CRM CRM
 
 The CRM is your central hub for managing hotel bookings, client relationships, and sales activity. Here's where to begin:
 
@@ -132,7 +132,7 @@ export default function CRMGuide() {
           <BookOpen className="w-6 h-6 text-blue-600" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">CRM User Guide</h1>
-            <p className="text-sm text-gray-500">Learn how to navigate and use the EPIC Sales CRM</p>
+            <p className="text-sm text-gray-500">Learn how to navigate and use the GBSales-CRM CRM</p>
           </div>
         </div>
 

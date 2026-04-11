@@ -83,7 +83,7 @@ const navItems = [
         </button>
         <div className="flex items-center gap-2">
           <LayoutDashboard className="w-4 h-4 text-blue-400" />
-          <span className="text-sm font-bold text-white">EPIC Sales</span>
+          <span className="text-sm font-bold text-white">GBSales-CRM</span>
         </div>
       </div>
 
@@ -94,7 +94,7 @@ const navItems = [
         <div className="p-3 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <LayoutDashboard className="w-5 h-5 text-blue-400" />
-            <span className="text-base font-bold text-white">EPIC Sales</span>
+            <span className="text-base font-bold text-white">GBSales-CRM</span>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white lg:hidden">
             <X className="w-4 h-4" />

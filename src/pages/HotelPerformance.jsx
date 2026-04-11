@@ -194,7 +194,7 @@ export default function HotelPerformance() {
 
       // ── Sheet 1: Summary ──
       const summaryData = [
-        ['EPIC Sales — Hotel Performance Report'],
+        ['GBSales-CRM — Hotel Performance Report'],
         [`Property: ${hotelLabel}   |   Period: ${dateRange.start} to ${dateRange.end}   |   Generated: ${format(new Date(), 'MMM d, yyyy')}`],
         [],
         ['TOTALS'],

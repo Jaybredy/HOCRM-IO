@@ -149,7 +149,7 @@ export default function Tasks() {
         base44.integrations.Core.SendEmail({
           to: task.assigned_to,
           subject: `Task Reminder: "${task.title}" is ${label}`,
-          body: `Hi,\n\nThis is a reminder that your task "${task.title}" is ${label} (due: ${task.due_date}).\n\nPriority: ${task.priority}\n${task.description ? `\nDetails: ${task.description}\n` : ''}\nPlease take action soon.\n\n— EPIC Sales CRM`
+          body: `Hi,\n\nThis is a reminder that your task "${task.title}" is ${label} (due: ${task.due_date}).\n\nPriority: ${task.priority}\n${task.description ? `\nDetails: ${task.description}\n` : ''}\nPlease take action soon.\n\n— GBSales-CRM CRM`
         }).catch(() => {});
         lastSent[sentKey] = true;
       }
