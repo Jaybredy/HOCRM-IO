@@ -12,7 +12,7 @@
 
 import { corsHeaders } from '../_shared/cors.ts';
 import { getSupabaseClient, getUserFromRequest } from '../_shared/auth.ts';
-import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs';
+import * as XLSX from 'https://esm.sh/xlsx@0.18.5';
 
 const DEFAULT_HOTEL_ID = '699773a2a2b93e6ce09fb42c';
 
