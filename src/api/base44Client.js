@@ -229,8 +229,14 @@ const integrations = {
 
     /** Send an email via the 'send-email' edge function */
     async SendEmail({ to, subject, body }) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
       const { data, error } = await supabase.functions.invoke('send-email', {
         body: { to, subject, body },
+        headers,
       });
       if (error) throw error;
       return data;
@@ -238,8 +244,14 @@ const integrations = {
 
     /** Invoke an LLM via the 'ai-gateway' edge function */
     async InvokeLLM(params) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
       const { data, error } = await supabase.functions.invoke('ai-gateway', {
         body: params,
+        headers,
       });
       if (error) throw error;
       return data;
@@ -252,8 +264,14 @@ const integrations = {
 // ---------------------------------------------------------------------------
 const functions = {
   async invoke(functionName, body) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
     const { data, error } = await supabase.functions.invoke(functionName, {
       body,
+      headers,
     });
     if (error) throw error;
     return data;
@@ -281,8 +299,14 @@ export const base44 = {
   // User management — inviteUser via Edge Function
   users: {
     async inviteUser(email, role, fullName) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
       const response = await supabase.functions.invoke('invite-user', {
         body: { email, role, full_name: fullName || '' },
+        headers,
       });
       console.log('invite-user response:', response);
       const { data, error } = response;
