@@ -22,7 +22,7 @@ export default function ReportUpload({ hotels, selectedHotelId, onSuccess }) {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
       // Step 2: Call the GRC-specific import function
-      const response = await base44.functions.invoke('importUmaGrcXlsx', { file_url, hotel_id: selectedHotelId });
+      const response = await base44.functions.invoke('import-uma-grc-xlsx', { file_url, hotel_id: selectedHotelId });
       const data = response.data;
 
       if (data?.success) {
