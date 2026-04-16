@@ -338,6 +338,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    const allowedHost = new URL(Deno.env.get('SUPABASE_URL')!).hostname;
+    try {
+      const parsed = new URL(file_url);
+      if (parsed.hostname !== allowedHost) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid file_url origin' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid file_url' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const fileResponse = await fetch(file_url);
     if (!fileResponse.ok) {
       return new Response(
@@ -541,7 +557,7 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: (error as Error).message, stack: (error as Error).stack }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

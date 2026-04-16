@@ -6,9 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 // need zero changes.
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL ||
-  'https://akyprqkrxbqlyrhgeubg.supabase.co';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -308,7 +306,6 @@ export const base44 = {
         body: { email, role, full_name: fullName || '' },
         headers,
       });
-      console.log('invite-user response:', response);
       const { data, error } = response;
       if (error) {
         // Try to extract message from the error
