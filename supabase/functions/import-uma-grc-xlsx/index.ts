@@ -14,7 +14,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { getSupabaseClient, getUserFromRequest } from '../_shared/auth.ts';
 import * as XLSX from 'https://esm.sh/xlsx@0.18.5';
 
-const DEFAULT_HOTEL_ID = '699773a2a2b93e6ce09fb42c';
+const DEFAULT_HOTEL_ID = Deno.env.get('DEFAULT_HOTEL_ID') || '';
 
 function parseNum(val: unknown): number {
   const n = parseFloat(String(val ?? '').replace(/,/g, ''));
@@ -354,6 +354,8 @@ Deno.serve(async (req) => {
       );
     }
 
+    const MAX_FILE_SIZE = 10485760; // 10 MB
+
     const fileResponse = await fetch(file_url);
     if (!fileResponse.ok) {
       return new Response(
@@ -361,7 +363,24 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const contentLength = fileResponse.headers.get('Content-Length');
+    if (contentLength && parseInt(contentLength, 10) > MAX_FILE_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'File too large: must be 10 MB or less' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const fileBuffer = await fileResponse.arrayBuffer();
+
+    if (fileBuffer.byteLength > MAX_FILE_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'File too large: must be 10 MB or less' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const workbook = XLSX.read(new Uint8Array(fileBuffer), { type: 'array' });
 
     const { data: existingItemsData, error: itemsErr } = await supabaseAdmin

@@ -27,7 +27,7 @@ export default function MyPerformance() {
 
   useEffect(() => {
     base44.auth.me().then(user => {
-      if (user?.role === 'admin') setIsAdmin(true);
+      if (['admin', 'EPIC_ADMIN'].includes(user?.role)) setIsAdmin(true);
       setCurrentUserEmail(user?.email || '');
     }).catch(() => {});
   }, []);

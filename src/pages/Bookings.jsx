@@ -301,11 +301,11 @@ export default function Bookings() {
                               <Link to={createPageUrl('ClientProfile') + `?client_id=${item.client_id}`} className="hover:text-blue-400 transition-colors underline underline-offset-2">
                                 {item.client_name || '—'}
                               </Link>
-                            ) : ((!item.client_id && item.hotel_id === '699773a2a2b93e6ce09fb42c') ? '—' : (item.client_name || '—'))}
+                            ) : ((!item.client_id && item.event_type === 'group') ? '—' : (item.client_name || '—'))}
                           </TableCell>
                           <TableCell className="text-white font-medium">
                             <Link to={createPageUrl('CRM') + `?edit=${item.id}`} className="hover:text-blue-400 transition-colors underline underline-offset-2">
-                              {(!item.client_id && item.hotel_id === '699773a2a2b93e6ce09fb42c') ? (item.booking_name || item.client_name || '—') : (item.booking_name || '—')}
+                              {(!item.client_id && item.event_type === 'group') ? (item.booking_name || item.client_name || '—') : (item.booking_name || '—')}
                             </Link>
                           </TableCell>
                           <TableCell className="text-slate-300 text-sm">{getPropertyName(item)}</TableCell>

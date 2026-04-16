@@ -12,7 +12,7 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = ['admin', 'EPIC_ADMIN'].includes(user?.role);
   const [hotelsOpen, setHotelsOpen] = useState(false);
   const [rentalsOpen, setRentalsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);

@@ -76,7 +76,7 @@ export default function ProductionForm({ hotels, onSuccess, onCancel, editItem =
   const [formData, setFormData] = useState(() => {
     if (editItem) {
       // For Uma House GRC imports (no client_id): move client_name → booking_name, clear client for user to fill
-      const isUmaHouseGRC = editItem.hotel_id === '699773a2a2b93e6ce09fb42c' && !editItem.client_id;
+      const isUmaHouseGRC = editItem.event_type === 'group' && !editItem.client_id;
       return {
         ...editItem,
         booking_name: isUmaHouseGRC ? (editItem.client_name || editItem.booking_name || '') : (editItem.booking_name || ''),

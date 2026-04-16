@@ -36,11 +36,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get all bookings created by ayesha@epic-rev.com
-    const { data: allBookings, error: bookingsError } = await supabaseAdmin
+    const body = await req.json().catch(() => ({}));
+    const createdByFilter = body.created_by || null;
+
+    let query = supabaseAdmin
       .from('production_items')
-      .select('id, client_id, client_name, arrival_date')
-      .eq('created_by', 'ayesha@epic-rev.com');
+      .select('id, client_id, client_name, arrival_date');
+    if (createdByFilter) query = query.eq('created_by', createdByFilter);
+
+    const { data: allBookings, error: bookingsError } = await query;
 
     if (bookingsError) throw bookingsError;
 

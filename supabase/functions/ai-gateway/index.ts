@@ -8,12 +8,17 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { getSupabaseClient, getUserFromRequest } from '../_shared/auth.ts';
 
-// In-memory daily rate limiter (resets on cold start)
-const dailyUsage = new Map<string, number>();
 const DAILY_LIMIT = 50;
 
-function getTodayKey(email: string) {
-  return `${email}_${new Date().toISOString().slice(0, 10)}`;
+async function getDailyUsage(supabaseAdmin: any, email: string): Promise<number> {
+  const today = new Date().toISOString().slice(0, 10);
+  const { count } = await supabaseAdmin
+    .from('audit_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_email', email)
+    .eq('action', 'ai_gateway_call')
+    .gte('created_at', `${today}T00:00:00Z`);
+  return count ?? 0;
 }
 
 function mapLegacyRole(role: string | undefined): string {
@@ -61,9 +66,8 @@ Deno.serve(async (req) => {
       return json({ error: 'AI_USE is restricted to EPIC_ADMIN only' }, 403);
     }
 
-    // Rate limit check
-    const dayKey = getTodayKey(email);
-    const current = dailyUsage.get(dayKey) || 0;
+    // Rate limit check (persisted to audit_logs)
+    const current = await getDailyUsage(supabaseAdmin, email);
     if (current >= DAILY_LIMIT) {
       await supabaseAdmin.from('audit_logs').insert({
         actor_email: email, actor_role: role,
@@ -82,8 +86,12 @@ Deno.serve(async (req) => {
       return json({ error: 'prompt is required' }, 400);
     }
 
-    // Increment usage
-    dailyUsage.set(dayKey, current + 1);
+    // Record usage for rate limiting
+    await supabaseAdmin.from('audit_logs').insert({
+      user_email: email, actor_email: email, actor_role: role,
+      action: 'ai_gateway_call',
+      success: true,
+    }).catch(() => {});
 
     // Build messages for Anthropic API
     const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');

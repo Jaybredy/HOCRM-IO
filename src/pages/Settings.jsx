@@ -391,8 +391,8 @@ export default function Settings() {
                     </TableCell>
                     <TableCell className="text-gray-600">{user.email}</TableCell>
                     <TableCell>
-                      <Badge className={user.role === 'admin' ? 'bg-red-500 text-white' : 'bg-blue-100 text-blue-800'}>
-                        {user.role === 'admin' ? 'Administrator' : 'User'}
+                      <Badge className={['admin', 'EPIC_ADMIN'].includes(user.role) ? 'bg-red-500 text-white' : 'bg-blue-100 text-blue-800'}>
+                        {['admin', 'EPIC_ADMIN'].includes(user.role) ? 'Administrator' : 'User'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-gray-500 text-sm">

@@ -60,7 +60,6 @@ import Bookings from './pages/Bookings';
 import CRM from './pages/CRM';
 import CRMGuide from './pages/CRMGuide';
 import ClientProfile from './pages/ClientProfile';
-import ClientProfileMock from './pages/ClientProfileMock';
 import Clients from './pages/Clients';
 import Goals from './pages/Goals';
 import HotelPerformance from './pages/HotelPerformance';
@@ -95,7 +94,6 @@ export const PAGES = {
     "CRM": CRM,
     "CRMGuide": CRMGuide,
     "ClientProfile": ClientProfile,
-    "ClientProfileMock": ClientProfileMock,
     "Clients": Clients,
     "Goals": Goals,
     "HotelPerformance": HotelPerformance,

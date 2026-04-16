@@ -3,7 +3,7 @@
  */
 
 export const ROLES = {
-  EPIC_ADMIN:     'admin',
+  EPIC_ADMIN:     'EPIC_ADMIN',
   HOTEL_MANAGER:  'hotel_manager',
   SALES_MANAGER:  'sales_manager',
   USER:           'user',
@@ -110,6 +110,8 @@ const ROLE_CAPABILITIES = {
     CAPABILITIES.RECORD_VIEW,
     CAPABILITIES.REPORTS_VIEW,
   ],
+
+  user: [],
 };
 
 /** Whether a role has access to all properties without per-property grants */

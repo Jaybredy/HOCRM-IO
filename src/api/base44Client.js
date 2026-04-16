@@ -156,14 +156,14 @@ const auth = {
   /** Return the current user object with id, email, full_name, role */
   async me() {
     const {
-      data: { session },
+      data: { user },
       error: sessionError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
     if (sessionError) throw sessionError;
-    if (!session?.user) return null;
+    if (!user) return null;
 
-    const email = session.user.email;
+    const email = user.email;
 
     // Look up the application-level user record
     const { data: users, error: userError } = await supabase
@@ -177,9 +177,9 @@ const auth = {
     const userRow = users?.[0] || {};
 
     return {
-      id: userRow.id || session.user.id,
+      id: userRow.id || user.id,
       email,
-      full_name: userRow.full_name || session.user.user_metadata?.full_name || '',
+      full_name: userRow.full_name || user.user_metadata?.full_name || '',
       role: userRow.role || 'user',
       ...userRow,
     };
@@ -280,9 +280,7 @@ const functions = {
 // appLogs — analytics, no-op in Supabase migration
 // ---------------------------------------------------------------------------
 const appLogs = {
-  logUserInApp(pageName) {
-    console.debug('[appLogs] logUserInApp:', pageName);
-  },
+  logUserInApp() {},
 };
 
 // ---------------------------------------------------------------------------

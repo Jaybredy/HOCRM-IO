@@ -85,7 +85,7 @@ export default function SalesActivities() {
   useEffect(() => {
     base44.auth.me().then(u => {
       setUser(u);
-      const admin = u?.role === 'admin';
+      const admin = ['admin', 'EPIC_ADMIN'].includes(u?.role);
       setIsAdmin(admin);
       if (u?.full_name) {
         setFormData(prev => ({ ...prev, seller_name: u.full_name }));
