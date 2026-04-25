@@ -386,6 +386,24 @@ export const base44 = {
       if (data?.error) throw new Error(data.error);
       return data;
     },
+
+    async updateUserRole(userId, newRole) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers = { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY };
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+      const url = `${SUPABASE_URL}/functions/v1/update-user-role`;
+      const rawRes = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ user_id: userId, new_role: newRole }),
+      });
+      const rawText = await rawRes.text();
+      let data = null;
+      try { data = rawText ? JSON.parse(rawText) : null; } catch { data = { raw: rawText }; }
+      if (!rawRes.ok) throw new Error(data?.error || `HTTP ${rawRes.status}`);
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
   },
 };
 

@@ -86,7 +86,7 @@ export default function UserManagement() {
   });
 
   const updateRoleMutation = useMutation({
-    mutationFn: ({ id, role }) => base44.entities.User.update(id, { role }),
+    mutationFn: ({ id, role }) => base44.users.updateUserRole(id, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setEditingUser(null);
