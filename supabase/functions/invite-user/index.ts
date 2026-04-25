@@ -16,6 +16,7 @@
 
 import { corsHeadersFor } from '../_shared/cors.ts';
 import { getSupabaseClient } from '../_shared/auth.ts';
+import { sendInviteEmail } from '../_shared/resend.ts';
 
 type Role =
   | 'user'
@@ -256,11 +257,35 @@ Deno.serve(async (req) => {
       email,
     });
 
+    const magicLink = resetData?.properties?.action_link ?? null;
+
+    // Look up hotel name for the email body (best-effort; never blocks invite)
+    let hotelName: string | null = null;
+    if (hotel_id) {
+      const { data: h } = await supabaseAdmin.from('hotels').select('name').eq('id', hotel_id).maybeSingle();
+      hotelName = h?.name ?? null;
+    }
+
+    // Send the invite email via Resend. Failure here doesn't roll back the
+    // invite — the magic_link is still returned in the response so the
+    // inviter can copy/paste it manually if email delivery fails.
+    let emailResult = { sent: false, skipped: true } as { sent: boolean; skipped?: boolean; error?: string; resend_id?: string };
+    if (magicLink) {
+      emailResult = await sendInviteEmail({
+        to: email,
+        magicLink,
+        hotelName,
+        roleLabel: role,
+        inviterName: callerProfile.email ?? null,
+      });
+    }
+
     return jsonResponse(req, {
       success: true,
       user: userRow,
       hotel_access: propertyAccessRow,
-      magic_link: resetData?.properties?.action_link ?? null,
+      magic_link: magicLink,
+      email: emailResult,
     });
   } catch (error) {
     return jsonResponse(req, { error: (error as Error).message }, 500);
