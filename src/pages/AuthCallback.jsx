@@ -6,6 +6,26 @@ import { supabase } from '@/api/base44Client';
  * Handles Supabase auth callbacks (password recovery, magic links, email confirmations).
  * Supabase redirects here with tokens in the URL hash.
  */
+
+// Only allow same-origin paths as ?returnTo. Reject absolute URLs, schemes,
+// protocol-relative refs, anything that could leak the session token to a
+// third-party origin via an open-redirect chain.
+function safeReturnTo(rawReturnTo) {
+  if (!rawReturnTo) return '/';
+  try {
+    // Must start with `/` and not `//` (protocol-relative). Reject schemes.
+    if (typeof rawReturnTo !== 'string') return '/';
+    if (!rawReturnTo.startsWith('/') || rawReturnTo.startsWith('//')) return '/';
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(rawReturnTo)) return '/';
+    // Resolve against current origin and confirm origin didn't change.
+    const u = new URL(rawReturnTo, window.location.origin);
+    if (u.origin !== window.location.origin) return '/';
+    return u.pathname + u.search + u.hash;
+  } catch {
+    return '/';
+  }
+}
+
 export default function AuthCallback() {
   const navigate = useNavigate();
   const [message, setMessage] = useState('Processing authentication...');
@@ -17,6 +37,8 @@ export default function AuthCallback() {
         // The JS client automatically picks them up via onAuthStateChange
         const { data: { session }, error } = await supabase.auth.getSession();
 
+        const returnTo = safeReturnTo(new URLSearchParams(window.location.search).get('returnTo'));
+
         if (error) {
           setMessage(`Authentication error: ${error.message}`);
           setTimeout(() => navigate('/login'), 3000);
@@ -25,7 +47,7 @@ export default function AuthCallback() {
 
         if (session) {
           setMessage('Authenticated! Redirecting...');
-          setTimeout(() => navigate('/'), 1000);
+          setTimeout(() => navigate(returnTo), 1000);
         } else {
           setMessage('No session found. Redirecting to login...');
           setTimeout(() => navigate('/login'), 2000);
