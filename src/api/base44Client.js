@@ -11,7 +11,18 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Disable Supabase auth-js Web Locks. Web Locks can zombie out across tab/HMR
+// reloads (lock held by a dead frame, no waiter queued, no release event),
+// which deadlocks every auth-gated call: getSession(), functions.invoke(),
+// any RLS-tagged REST request. Falling back to an in-memory no-op lock
+// trades weaker cross-tab refresh-token coordination — acceptable here —
+// for predictable per-tab behavior.
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    lock: async (_name, _acquireTimeout, fn) => fn(),
+    lockAcquireTimeout: 1000,
+  },
+});
 
 // ---------------------------------------------------------------------------
 // Entity name  ->  Supabase table name mapping
@@ -294,17 +305,30 @@ export const base44 = {
   appLogs,
   // User management — inviteUser via Edge Function
   users: {
-    async inviteUser(email, role, fullName) {
+    async inviteUser(email, role, fullName, hotelId) {
       const { data: { session } } = await supabase.auth.getSession();
       const headers = {};
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }
-      const response = await supabase.functions.invoke('invite-user', {
-        body: { email, role, full_name: fullName || '' },
-        headers,
+      const body = { email, role, full_name: fullName || '', hotel_id: hotelId ?? null };
+      // Use raw fetch (not supabase-js .invoke) so we can surface error response
+      // bodies. .invoke() wraps non-2xx responses in FunctionsHttpError and hides
+      // the JSON body, which makes debugging the invite-user flow painful.
+      const url = `${SUPABASE_URL}/functions/v1/invite-user`;
+      const rawRes = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON_KEY,
+          ...headers,
+        },
+        body: JSON.stringify(body),
       });
-      const { data, error } = response;
+      const rawText = await rawRes.text();
+      let data = null;
+      try { data = rawText ? JSON.parse(rawText) : null; } catch { data = { raw: rawText }; }
+      const error = rawRes.ok ? null : { message: data?.error || `HTTP ${rawRes.status}`, status: rawRes.status, details: data };
       if (error) {
         // Try to extract message from the error
         const msg = typeof error === 'object' ? (error.message || JSON.stringify(error)) : String(error);

@@ -15,10 +15,19 @@ const ROLES = [
   { value: 'admin', label: 'Epic Admin (Full Access)' },
   { value: 'hotel_manager', label: 'Hotel Manager' },
   { value: 'sales_manager', label: 'Sales Manager' },
-  { value: 'EPIC_MANAGER', label: 'Epic Manager' },
-  { value: 'EPIC_CONTRIBUTOR', label: 'Epic Contributor' },
-  { value: 'EPIC_VIEWER', label: 'Epic Viewer' },
+  { value: 'EPIC_MANAGER', label: 'Epic Manager (multi-hotel)' },
+  { value: 'EPIC_VIEWER', label: 'Epic Viewer (read-only)' },
 ];
+
+// Which roles the caller may grant. Mirrors the ROLE_HIERARCHY in invite-user edge fn.
+const GRANTABLE_ROLES = {
+  admin:          ['admin', 'EPIC_MANAGER', 'hotel_manager', 'sales_manager', 'EPIC_VIEWER', 'user'],
+  EPIC_ADMIN:     ['admin', 'EPIC_MANAGER', 'hotel_manager', 'sales_manager', 'EPIC_VIEWER', 'user'],
+  EPIC_MANAGER:   ['hotel_manager', 'sales_manager', 'EPIC_VIEWER', 'user'],
+  hotel_manager:  ['sales_manager', 'user'],
+};
+
+const isAdminRole = (role) => role === 'admin' || role === 'EPIC_ADMIN';
 
 const getRoleBadgeColor = (role) => {
   if (role === 'admin' || role === 'EPIC_ADMIN') return 'bg-red-500';
@@ -36,6 +45,7 @@ export default function UserManagement() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('user');
+  const [inviteHotelId, setInviteHotelId] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [editRole, setEditRole] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
@@ -51,13 +61,26 @@ export default function UserManagement() {
     queryFn: () => base44.entities.User.list()
   });
 
+  const { data: hotels = [] } = useQuery({
+    queryKey: ['hotels'],
+    queryFn: () => base44.entities.Hotel.list(),
+  });
+
+  // Filter role dropdown by caller's privileges
+  const allowedRoleValues = GRANTABLE_ROLES[currentUser?.role] ?? [];
+  const availableRoles = ROLES.filter((r) => allowedRoleValues.includes(r.value));
+
+  // Admins can pick any hotel; everyone else is auto-scoped to their hotel(s)
+  const canPickHotel = isAdminRole(currentUser?.role);
+
   const inviteMutation = useMutation({
-    mutationFn: (data) => base44.users.inviteUser(data.email, data.role),
+    mutationFn: (data) => base44.users.inviteUser(data.email, data.role, data.full_name, data.hotel_id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowInviteDialog(false);
       setInviteEmail('');
       setInviteRole('user');
+      setInviteHotelId('');
     },
     onError: (error) => alert(`Error inviting user: ${error.message}`)
   });
@@ -74,7 +97,12 @@ export default function UserManagement() {
   const handleInvite = (e) => {
     e.preventDefault();
     if (!inviteEmail) return;
-    inviteMutation.mutate({ email: inviteEmail, role: inviteRole });
+    const hotelId = canPickHotel ? (inviteHotelId || null) : (inviteHotelId || null);
+    if (!isAdminRole(currentUser?.role) && !hotelId) {
+      alert('Please select a hotel to invite this user to.');
+      return;
+    }
+    inviteMutation.mutate({ email: inviteEmail, role: inviteRole, hotel_id: hotelId });
   };
 
   const handleEditRole = (e) => {
@@ -135,7 +163,16 @@ export default function UserManagement() {
                   <Select value={inviteRole} onValueChange={setInviteRole}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                      {availableRoles.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Hotel {isAdminRole(currentUser?.role) && <span className="text-slate-500 text-xs">(optional for admins)</span>}</Label>
+                  <Select value={inviteHotelId} onValueChange={setInviteHotelId}>
+                    <SelectTrigger><SelectValue placeholder="Select a hotel..." /></SelectTrigger>
+                    <SelectContent>
+                      {hotels.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -210,7 +247,7 @@ export default function UserManagement() {
                 <Select value={editRole} onValueChange={setEditRole}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                    {availableRoles.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
