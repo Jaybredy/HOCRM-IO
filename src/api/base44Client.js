@@ -216,12 +216,41 @@ const auth = {
 // ---------------------------------------------------------------------------
 // integrations
 // ---------------------------------------------------------------------------
+// Resolve the caller's primary hotel via user_property_access. Cached per
+// session to avoid re-querying on every UploadFile call.
+let _cachedHotelId = null;
+async function resolveCallerHotelId() {
+  if (_cachedHotelId) return _cachedHotelId;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return null;
+  const { data } = await supabase
+    .from('user_property_access')
+    .select('properties!inner(hotel_id)')
+    .eq('user_email', user.email)
+    .eq('is_active', true)
+    .limit(1);
+  _cachedHotelId = data?.[0]?.properties?.hotel_id ?? null;
+  return _cachedHotelId;
+}
+
 const integrations = {
   Core: {
-    /** Upload a file to the 'attachments' storage bucket, return { file_url } */
-    async UploadFile({ file }) {
+    /**
+     * Upload a file to the 'attachments' storage bucket scoped to a hotel.
+     * Path: hotels/<hotel_id>/<timestamp>_<filename>. Returns a 1-hour signed URL.
+     *
+     * If hotelId isn't passed, the caller's primary hotel (from
+     * user_property_access) is auto-resolved. Admins without any hotel
+     * access fall back to a `legacy/` prefix that's accessible only via
+     * is_admin() RLS.
+     */
+    async UploadFile({ file, hotelId }) {
       const timestamp = Date.now();
-      const filePath = `${timestamp}_${file.name}`;
+      const resolvedHotelId = hotelId ?? (await resolveCallerHotelId());
+
+      const filePath = resolvedHotelId
+        ? `hotels/${resolvedHotelId}/${timestamp}_${file.name}`
+        : `legacy/${timestamp}_${file.name}`;
 
       const { error: uploadError } = await supabase.storage
         .from('attachments')
@@ -229,11 +258,14 @@ const integrations = {
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
+      // Bucket is private; return a short-TTL signed URL (1 hour).
+      const { data, error: signErr } = await supabase.storage
         .from('attachments')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 3600);
 
-      return { file_url: data.publicUrl };
+      if (signErr) throw signErr;
+
+      return { file_url: data.signedUrl, file_path: filePath };
     },
 
     /** Send an email via the 'send-email' edge function */
