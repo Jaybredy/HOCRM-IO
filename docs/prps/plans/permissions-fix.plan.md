@@ -284,6 +284,6 @@ Magic link already works; `user_property_access` row created by invite-user mean
    - Should `bd_*` tables be per-hotel (H4) or platform-wide?
    - Any tolerance for downtime? Phase 2's policy drops have a ~10-second window where things are unscoped — acceptable in low-traffic window.
 
-2. **Supabase PAT for running migrations.** I'll use the same PAT (`sbp_bfd04af3c513bad35a4416f8841d788cb52144e4`) or a fresh one — your call. After we're done, revoke at https://supabase.com/dashboard/account/tokens.
+2. **Supabase PAT for running migrations.** Re-issue a fresh token at https://supabase.com/dashboard/account/tokens before each migration session and revoke when done.
 
 3. **Confirm the test account** for Phase 3 demo. I'll need to invite a throwaway email and verify the flow end-to-end. Suggest you pick a non-primary email you control.
