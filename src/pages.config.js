@@ -114,7 +114,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "AccessManagement",
+    mainPage: "CRM",
     Pages: PAGES,
     Layout: __Layout,
 };

@@ -76,6 +76,21 @@ function unwrap({ data, error }) {
   return data;
 }
 
+// Tables that require hotel_id at insert time. Frontend doesn't always
+// know the user's hotel, so the adapter auto-resolves it from
+// user_property_access (cached via resolveCallerHotelId, defined below).
+// Closes the transitional "hotel_id IS NULL" escape hatches in the
+// clients_insert / tasks_insert / goals_insert RLS policies.
+const HOTEL_SCOPED_TABLES = new Set(['clients', 'tasks', 'goals', 'bd_leads']);
+
+async function injectHotelIdIfMissing(table, data) {
+  if (!HOTEL_SCOPED_TABLES.has(table)) return data;
+  if (data && data.hotel_id) return data;
+  const hotelId = await resolveCallerHotelId();
+  if (!hotelId) return data; // admin without hotel context — pass through; RLS will allow via is_admin()
+  return { ...data, hotel_id: hotelId };
+}
+
 // ---------------------------------------------------------------------------
 // Entity handler — returned by the Proxy for each entity name
 // ---------------------------------------------------------------------------
@@ -124,7 +139,8 @@ function createEntityHandler(entityName) {
 
     /** create(data) — insert a single record, return it */
     async create(data) {
-      const result = unwrap(await supabase.from(table).insert(data).select());
+      const enriched = await injectHotelIdIfMissing(table, data);
+      const result = unwrap(await supabase.from(table).insert(enriched).select());
       return result[0];
     },
 
@@ -143,7 +159,8 @@ function createEntityHandler(entityName) {
 
     /** bulkCreate(items) — insert multiple records, return them */
     async bulkCreate(items) {
-      return unwrap(await supabase.from(table).insert(items).select());
+      const enriched = await Promise.all(items.map((i) => injectHotelIdIfMissing(table, i)));
+      return unwrap(await supabase.from(table).insert(enriched).select());
     },
   };
 }
