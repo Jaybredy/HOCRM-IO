@@ -286,7 +286,7 @@ export default function CRM() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-                  {getGreeting()}{user ? `, ${user.full_name?.split(' ')[0] || 'there'}` : ''}!
+                  {getGreeting()}{user ? `, ${user.full_name?.split(' ')[0] || user.display_name || user.email?.split('@')[0] || 'there'}` : ''}!
                 </h1>
                 <p className="text-slate-400 mt-1">Track production and manage your sales pipeline</p>
               </div>

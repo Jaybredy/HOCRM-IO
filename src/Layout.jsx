@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import GlobalSearch from '@/components/GlobalSearch';
-import { LayoutDashboard, Building2, CheckCircle2, BarChart3, Award, TrendingUp, Plus, ListTodo, FileText, Upload, Settings, CalendarDays, Users, MessageSquare, ChevronDown, Briefcase, Phone, UtensilsCrossed, Home, FileSpreadsheet, Shield, BookOpen, Activity, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Building2, CheckCircle2, BarChart3, Award, TrendingUp, Plus, ListTodo, FileText, Upload, Settings, CalendarDays, Users, MessageSquare, ChevronDown, Briefcase, Phone, UtensilsCrossed, Home, FileSpreadsheet, Shield, BookOpen, Activity, Menu, X, LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { supabase } from '@/api/base44Client';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -11,8 +12,28 @@ import {
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isAdmin = ['admin', 'EPIC_ADMIN'].includes(user?.role);
+  const canManageUsers = isAdmin || user?.role === 'hotel_manager' || user?.role === 'EPIC_MANAGER';
+
+  // For hotel-scoped users, fetch the hotel they're attached to (for sidebar display)
+  const [scopedHotelName, setScopedHotelName] = useState(null);
+  useEffect(() => {
+    if (!user?.email || isAdmin) { setScopedHotelName(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('user_property_access')
+        .select('properties!inner(hotels!inner(name))')
+        .eq('user_email', user.email)
+        .eq('is_active', true)
+        .limit(1);
+      if (cancelled) return;
+      const name = data?.[0]?.properties?.hotels?.name ?? null;
+      setScopedHotelName(name);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.email, isAdmin]);
   const [hotelsOpen, setHotelsOpen] = useState(false);
   const [rentalsOpen, setRentalsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -60,11 +81,14 @@ const navItems = [
     { name: 'CRM Guide', icon: BookOpen, page: 'CRMGuide' },
   ];
 
-  const adminActions = isAdmin ? [
-          { name: 'Users', icon: Users, page: 'UserManagement' },
-          { name: 'Access Control', icon: Shield, page: 'AccessManagement' },
-          { name: 'Settings', icon: Settings, page: 'Settings' },
-        ] : [];
+  // hotel_manager / EPIC_MANAGER see Users; admin sees everything
+  const adminActions = [
+    ...(canManageUsers ? [{ name: 'Users', icon: Users, page: 'UserManagement' }] : []),
+    ...(isAdmin ? [
+      { name: 'Access Control', icon: Shield, page: 'AccessManagement' },
+      { name: 'Settings', icon: Settings, page: 'Settings' },
+    ] : []),
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -251,6 +275,34 @@ const navItems = [
             </div>
           )}
           </nav>
+
+          {/* User identity + logout footer */}
+          {user && (
+            <div className="border-t border-slate-700 bg-slate-900 p-3 space-y-2">
+              <div className="text-xs">
+                <div className="text-white font-medium truncate">
+                  {user.full_name || user.display_name || user.email?.split('@')[0]}
+                </div>
+                <div className="text-slate-400 truncate">{user.email}</div>
+                <div className="text-slate-500 text-[10px] uppercase tracking-wide mt-0.5">
+                  {user.role?.replace(/_/g, ' ')}
+                </div>
+                {scopedHotelName && (
+                  <div className="text-blue-400 text-[11px] mt-1 flex items-center gap-1">
+                    <Briefcase className="w-3 h-3" />
+                    <span className="truncate">{scopedHotelName}</span>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => logout(true)}
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign out</span>
+              </button>
+            </div>
+          )}
           </aside>
 
           {/* Main Content */}
