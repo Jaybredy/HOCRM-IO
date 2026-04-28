@@ -89,10 +89,18 @@ export default function ActualResultsManager({ hotels }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Coerce empty strings to null for typed columns. Postgres rejects ""
+    // for DATE / NUMERIC columns with code 22007 / 22P02.
+    const dateFields = ['date_signed', 'start_date', 'end_date'];
+    const numericFields = ['projected_room_nights', 'projected_revenue', 'actual_room_nights', 'actual_revenue', 'marketing_spend'];
+    const cleaned = { ...formData };
+    for (const k of [...dateFields, ...numericFields]) {
+      if (cleaned[k] === '' || cleaned[k] === undefined) cleaned[k] = null;
+    }
     if (editItem) {
-      updateMutation.mutate({ id: editItem.id, data: formData });
+      updateMutation.mutate({ id: editItem.id, data: cleaned });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(cleaned);
     }
   };
 

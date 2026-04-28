@@ -36,6 +36,9 @@ export default function Reports() {
   const [weeklyDateFrom, setWeeklyDateFrom] = useState('');
   const [weeklyDateTo, setWeeklyDateTo] = useState('');
   const [productionDateField, setProductionDateField] = useState('activity_date');
+  // Default to 'definite' so Reports totals match the Dashboard out of the box.
+  // Users can change to 'all' (or any status) to see broader pipeline numbers.
+  const [selectedStatus, setSelectedStatus] = useState('definite');
 
   const { data: production = [] } = useQuery({
     queryKey: ['production'],
@@ -89,6 +92,7 @@ export default function Reports() {
     if (!dateVal || dateVal < dateRange.start || dateVal > dateRange.end) return false;
     if (sellerType !== 'all' && item.seller_type !== sellerType) return false;
     if (selectedHotels.length > 0 && !selectedHotels.includes(item.hotel_id)) return false;
+    if (selectedStatus !== 'all' && item.status !== selectedStatus) return false;
     return true;
   });
 
@@ -434,6 +438,21 @@ export default function Reports() {
                 <SelectItem value="activity_date">Activity Date</SelectItem>
                 <SelectItem value="arrival_date">Arrival Date</SelectItem>
                 <SelectItem value="created_date">Created Date</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-slate-300 whitespace-nowrap">Status:</label>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="w-40 bg-slate-800 border-slate-600 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="definite">Definite</SelectItem>
+                <SelectItem value="tentative">Tentative</SelectItem>
+                <SelectItem value="prospect">Prospect</SelectItem>
+                <SelectItem value="actual_pickup">Actual Pickup</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
               </SelectContent>
             </Select>
           </div>

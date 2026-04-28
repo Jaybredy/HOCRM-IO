@@ -170,13 +170,16 @@ Deno.serve(async (req) => {
     const newAuthUid = authData.user.id;
 
     // Create users table row (link auth_uid explicitly; Phase 1 fix-up depended on this)
+    // display_name is a short, stable handle derived from the email-local-part —
+    // never the full_name. Mixing them causes the dashboard greeting to read
+    // "Good evening, Test Five!" instead of the user's actual handle.
     const { data: userRow, error: insertError } = await supabaseAdmin
       .from('users')
       .insert({
         email,
         full_name: full_name || '',
         role,
-        display_name: full_name || email.split('@')[0],
+        display_name: email.split('@')[0],
         auth_uid: newAuthUid,
       })
       .select()
