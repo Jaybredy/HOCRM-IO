@@ -49,6 +49,16 @@ export default function ProductionCalendar() {
     queryFn: () => base44.entities.Hotel.list()
   });
 
+  // Auto-select the user's hotel when they have access to exactly one. RLS
+  // already scopes Hotel.list() to hotels they can see, so for hotel-scoped
+  // users (sales_manager, hotel_manager) hotels.length is typically 1 and
+  // forcing them to pick from a one-entry dropdown is friction.
+  useEffect(() => {
+    if (selectedHotel === 'all' && hotels.length === 1) {
+      setSelectedHotel(hotels[0].id);
+    }
+  }, [hotels, selectedHotel]);
+
   const { data: production = [] } = useQuery({
     queryKey: ['production'],
     queryFn: () => base44.entities.ProductionItem.list()
