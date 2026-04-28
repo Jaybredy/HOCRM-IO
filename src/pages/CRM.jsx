@@ -66,21 +66,21 @@ export default function CRM() {
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
 
-    // Check for hash in URL to show forms
-    const hash = window.location.hash;
-    if (hash === '#add-production') {
-      setShowForm(true);
-      window.history.replaceState(null, '', window.location.pathname);
-    } else if (hash === '#add-activity') {
-      setShowActivityLog(true);
-      window.history.replaceState(null, '', window.location.pathname);
-    } else if (hash === '#upload-report') {
-      setShowUploadReport(true);
-      window.history.replaceState(null, '', window.location.pathname);
-    } else if (hash === '#add-catering') {
-      setShowCateringForm(true);
-      window.history.replaceState(null, '', window.location.pathname);
-    }
+    // Check the URL hash and open the matching form. Runs on initial mount
+    // AND on every hashchange so sidebar Hotels -> Add Booking works even
+    // when already on /CRM (no remount = the previous useEffect never re-ran).
+    const handleHash = () => {
+      const hash = window.location.hash;
+      let matched = true;
+      if (hash === '#add-production') setShowForm(true);
+      else if (hash === '#add-activity') setShowActivityLog(true);
+      else if (hash === '#upload-report') setShowUploadReport(true);
+      else if (hash === '#add-catering') setShowCateringForm(true);
+      else matched = false;
+      if (matched) window.history.replaceState(null, '', window.location.pathname);
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
 
     // Support ?edit=<id> to open a specific item for editing
     const urlParams = new URLSearchParams(window.location.search);
@@ -99,6 +99,8 @@ export default function CRM() {
       });
       window.history.replaceState(null, '', window.location.pathname);
     }
+
+    return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
   const { data: hotels = [] } = useQuery({
@@ -286,7 +288,7 @@ export default function CRM() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-                  {getGreeting()}{user ? `, ${user.full_name?.split(' ')[0] || user.display_name || user.email?.split('@')[0] || 'there'}` : ''}!
+                  {getGreeting()}{user ? `, ${user.display_name || user.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'there'}` : ''}!
                 </h1>
                 <p className="text-slate-400 mt-1">Track production and manage your sales pipeline</p>
               </div>

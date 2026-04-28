@@ -154,8 +154,14 @@ const navItems = [
             <DropdownMenuContent
               side="right"
               align="start"
-              className="bg-slate-800 border-slate-700 w-52"
+              className="bg-slate-800 border-slate-700 w-56"
             >
+              {scopedHotelName && (
+                <div className="px-2 py-1.5 mb-1 border-b border-slate-700 flex items-center gap-2 text-xs text-blue-300">
+                  <Briefcase className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate font-medium">{scopedHotelName}</span>
+                </div>
+              )}
               {hotelsActions.map((action) => (
                 <DropdownMenuItem
                   key={action.label}

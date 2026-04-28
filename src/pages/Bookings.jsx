@@ -78,10 +78,25 @@ export default function Bookings() {
     queryFn: () => base44.entities.Property.list()
   });
 
-  const allProperties = useMemo(() => [
-    ...hotels.map(h => ({ id: h.id, name: h.name })),
-    ...rentalProperties.map(p => ({ id: p.id, name: p.name }))
-  ], [hotels, rentalProperties]);
+  // Merge hotels + rental properties for the filter dropdown.
+  // properties.hotel_id can mirror an existing hotel (created by invite-user
+  // for user_property_access); dedupe by name so the dropdown doesn't show
+  // the same hotel twice.
+  const allProperties = useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    for (const h of hotels) {
+      if (seen.has(h.name)) continue;
+      seen.add(h.name);
+      out.push({ id: h.id, name: h.name });
+    }
+    for (const p of rentalProperties) {
+      if (seen.has(p.name)) continue;
+      seen.add(p.name);
+      out.push({ id: p.id, name: p.name });
+    }
+    return out;
+  }, [hotels, rentalProperties]);
 
   const getPropertyName = (item) => {
     const propId = item.hotel_id || item.property_id;
