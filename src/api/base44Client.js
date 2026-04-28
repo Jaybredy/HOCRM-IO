@@ -81,7 +81,14 @@ function unwrap({ data, error }) {
 // user_property_access (cached via resolveCallerHotelId, defined below).
 // Closes the transitional "hotel_id IS NULL" escape hatches in the
 // clients_insert / tasks_insert / goals_insert RLS policies.
-const HOTEL_SCOPED_TABLES = new Set(['clients', 'tasks', 'goals', 'bd_leads']);
+const HOTEL_SCOPED_TABLES = new Set([
+  'clients', 'tasks', 'goals', 'bd_leads',
+  'bd_team_members', 'bd_budgets',
+  'budgets', 'sales_targets',
+  'team_notes', 'service_pricing',
+  'catering_events', 'rfps', 'activity_logs',
+  'actual_results',
+]);
 
 async function injectHotelIdIfMissing(table, data) {
   if (!HOTEL_SCOPED_TABLES.has(table)) return data;
