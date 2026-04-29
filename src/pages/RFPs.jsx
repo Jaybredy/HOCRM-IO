@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -21,15 +22,17 @@ const STATUS_CONFIG = {
 export default function RFPs() {
   const [showForm, setShowForm] = useState(false);
   const [editRFP, setEditRFP] = useState(null);
+  const location = useLocation();
 
+  // useLocation re-fires on every Link nav (including same-page hash changes);
+  // window's `hashchange` event does not fire from React Router pushState.
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash === '#new-rfp') {
+    if (location.hash === '#new-rfp') {
       setShowForm(true);
       setEditRFP(null);
       window.history.replaceState(null, '', window.location.pathname);
     }
-  }, []);
+  }, [location.hash, location.key]);
   const [search, setSearch] = useState('');
   const [hotelFilter, setHotelFilter] = useState('all');
   const [dateMode, setDateMode] = useState('ytd');

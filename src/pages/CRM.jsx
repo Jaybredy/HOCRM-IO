@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -63,36 +64,12 @@ export default function CRM() {
   const [drilldownData, setDrilldownData] = useState(null);
   const queryClient = useQueryClient();
 
+  const location = useLocation();
+
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
 
-    // Check the URL hash and open the matching form. Runs on initial mount
-    // AND on every hashchange so sidebar Hotels -> Add Booking works even
-    // when already on /CRM (no remount = the previous useEffect never re-ran).
-    // Always close all dialogs first so two clicks in a row don't stack
-    // modals (previously: clicking Add Booking then Add Catering left
-    // both open).
-    const handleHash = () => {
-      const hash = window.location.hash;
-      const targets = {
-        '#add-production': setShowForm,
-        '#add-activity': setShowActivityLog,
-        '#upload-report': setShowUploadReport,
-        '#add-catering': setShowCateringForm,
-      };
-      if (!(hash in targets)) return;
-      // Close all, then open the targeted one. Avoids modal stacking.
-      setShowForm(false);
-      setShowActivityLog(false);
-      setShowUploadReport(false);
-      setShowCateringForm(false);
-      targets[hash](true);
-      window.history.replaceState(null, '', window.location.pathname);
-    };
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-
-    // Support ?edit=<id> to open a specific item for editing
+    // Support ?edit=<id> to open a specific item for editing (one-shot, mount-only)
     const urlParams = new URLSearchParams(window.location.search);
     const editId = urlParams.get('edit');
     const returnTo = urlParams.get('returnTo');
@@ -109,9 +86,29 @@ export default function CRM() {
       });
       window.history.replaceState(null, '', window.location.pathname);
     }
-
-    return () => window.removeEventListener('hashchange', handleHash);
   }, []);
+
+  // React Router's <Link> uses pushState/replaceState, which do NOT fire
+  // the native `hashchange` event. So we can't rely on a window listener;
+  // we have to react to location.hash via useLocation. This effect re-runs
+  // on every URL change, opens the matching dialog when the hash matches,
+  // and closes the others to avoid modal stacking.
+  useEffect(() => {
+    const hash = location.hash;
+    const targets = {
+      '#add-production': setShowForm,
+      '#add-activity': setShowActivityLog,
+      '#upload-report': setShowUploadReport,
+      '#add-catering': setShowCateringForm,
+    };
+    if (!(hash in targets)) return;
+    setShowForm(false);
+    setShowActivityLog(false);
+    setShowUploadReport(false);
+    setShowCateringForm(false);
+    targets[hash](true);
+    window.history.replaceState(null, '', window.location.pathname);
+  }, [location.hash, location.pathname, location.key]);
 
   const { data: hotels = [] } = useQuery({
     queryKey: ['hotels'],

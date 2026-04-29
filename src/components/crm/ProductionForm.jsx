@@ -343,13 +343,19 @@ export default function ProductionForm({ hotels, onSuccess, onCancel, editItem =
       seller_name: formData.seller_name || '',
       documents: documents
     };
-    if (editItem) {
-      await base44.entities.ProductionItem.update(editItem.id, payload);
-    } else {
-      await base44.entities.ProductionItem.create(payload);
+    try {
+      if (editItem) {
+        await base44.entities.ProductionItem.update(editItem.id, payload);
+      } else {
+        await base44.entities.ProductionItem.create(payload);
+      }
+      onSuccess();
+    } catch (err) {
+      const msg = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+      alert(`Failed to save booking: ${msg}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    onSuccess();
   };
 
   return (

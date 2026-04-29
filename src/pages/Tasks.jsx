@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -38,14 +39,16 @@ export default function Tasks() {
   });
 
   const queryClient = useQueryClient();
+  const location = useLocation();
 
+  // React to URL hash changes — useLocation fires on every Link navigation,
+  // window's `hashchange` event does not (since React Router uses pushState).
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash === '#add-task') {
+    if (location.hash === '#add-task') {
       setShowDialog(true);
       window.history.replaceState(null, '', window.location.pathname);
     }
-  }, []);
+  }, [location.hash, location.key]);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],

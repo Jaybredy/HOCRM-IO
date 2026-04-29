@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -21,15 +22,19 @@ export default function BDCRM() {
   const [customDateRange, setCustomDateRange] = useState(null);
 
   const queryClient = useQueryClient();
+  const location = useLocation();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
-    
-    const hash = window.location.hash;
-    if (hash === '#add-lead') {
-      setShowForm(true);
-    }
   }, []);
+
+  // useLocation re-fires on every Link nav; window.hashchange does not.
+  useEffect(() => {
+    if (location.hash === '#add-lead') {
+      setShowForm(true);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [location.hash, location.key]);
 
   const { data: bdLeads = [], isLoading: leadsLoading } = useQuery({
     queryKey: ['bdLeads'],
