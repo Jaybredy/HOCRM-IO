@@ -62,6 +62,11 @@ export default function Tasks() {
     queryFn: () => base44.entities.Client.list()
   });
 
+  const { data: assignableUsers = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list()
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Task.create(data),
     onSuccess: () => {
@@ -293,7 +298,17 @@ export default function Tasks() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Assigned To</Label>
-                      <Input value={formData.assigned_to} onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })} />
+                      <Select value={formData.assigned_to || 'unassigned'} onValueChange={(val) => setFormData({ ...formData, assigned_to: val === 'unassigned' ? '' : val })}>
+                        <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
+                          {assignableUsers.map(u => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.full_name || u.display_name || u.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>Due Date *</Label>
