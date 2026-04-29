@@ -447,7 +447,7 @@ export default function HotelPerformance() {
                   <div className="flex items-center gap-3">
                     <Award className="w-8 h-8 text-cyan-400" />
                     <div>
-                      <p className="text-sm text-slate-400">Actualized (Stayed)</p>
+                      <p className="text-sm text-slate-400">Actualization Rate</p>
                       <p className="text-xl font-bold text-white">{overallActualizationRate.toFixed(1)}%</p>
                     </div>
                   </div>
@@ -485,7 +485,7 @@ export default function HotelPerformance() {
                     <div>
                       <p className="text-sm text-slate-400">Conversion (Definite)</p>
                       <p className="text-xl font-bold text-white">{hotelMetrics[0]?.conversionRate.toFixed(1)}%</p>
-                      <p className="text-xs text-slate-500 mt-1">Actualized: {hotelMetrics[0]?.actualizationRate.toFixed(1)}%</p>
+                      <p className="text-xs text-slate-500 mt-1">Actualization: {hotelMetrics[0]?.actualizationRate.toFixed(1)}%</p>
                     </div>
                   </div>
                 </CardContent>

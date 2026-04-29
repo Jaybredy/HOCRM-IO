@@ -315,7 +315,7 @@ export default function MyPerformance() {
           <KPICard title="Total Revenue" value={currentKPIs.totalRevenue} change={calculateChange(currentKPIs.totalRevenue, previousKPIs.totalRevenue)} icon={DollarSign} format={(v) => `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} />
           <KPICard title="Average ADR" value={currentKPIs.adr} change={calculateChange(currentKPIs.adr, previousKPIs.adr)} icon={TrendingUp} format={(v) => `$${v.toFixed(2)}`} />
           <KPICard title="Conversion (Definite)" value={currentKPIs.conversionRate} change={calculateChange(currentKPIs.conversionRate, previousKPIs.conversionRate)} icon={Target} format={(v) => `${v.toFixed(1)}%`} />
-          <KPICard title="Actualized (Stayed)" value={currentKPIs.actualizationRate} change={calculateChange(currentKPIs.actualizationRate, previousKPIs.actualizationRate)} icon={Target} format={(v) => `${v.toFixed(1)}%`} />
+          <KPICard title="Actualization Rate" value={currentKPIs.actualizationRate} change={calculateChange(currentKPIs.actualizationRate, previousKPIs.actualizationRate)} icon={Target} format={(v) => `${v.toFixed(1)}%`} />
         </div>
 
         {/* Charts Row 1 */}
