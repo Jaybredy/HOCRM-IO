@@ -25,16 +25,25 @@ const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
-const DialogContent = React.forwardRef(({ className, children, ...props }, ref) => (
+// DialogContent always renders a hidden DialogTitle and DialogDescription
+// fallback so Radix UI's accessibility checks don't warn when consumers
+// don't provide them. Components that DO render their own DialogTitle /
+// DialogDescription work normally — Radix uses the last/visible one.
+// `aria-describedby` is destructured and explicitly forwarded so
+// `aria-describedby={undefined}` is a valid opt-out (Radix's docs).
+const DialogContent = React.forwardRef(({ className, children, 'aria-describedby': ariaDescribedBy, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      aria-describedby={ariaDescribedBy}
       className={cn(
         "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
         className
       )}
       {...props}>
+      <DialogPrimitive.Title className="sr-only">Dialog</DialogPrimitive.Title>
+      <DialogPrimitive.Description className="sr-only">Dialog content</DialogPrimitive.Description>
       {children}
       <DialogPrimitive.Close
         className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
