@@ -69,15 +69,25 @@ export default function CRM() {
     // Check the URL hash and open the matching form. Runs on initial mount
     // AND on every hashchange so sidebar Hotels -> Add Booking works even
     // when already on /CRM (no remount = the previous useEffect never re-ran).
+    // Always close all dialogs first so two clicks in a row don't stack
+    // modals (previously: clicking Add Booking then Add Catering left
+    // both open).
     const handleHash = () => {
       const hash = window.location.hash;
-      let matched = true;
-      if (hash === '#add-production') setShowForm(true);
-      else if (hash === '#add-activity') setShowActivityLog(true);
-      else if (hash === '#upload-report') setShowUploadReport(true);
-      else if (hash === '#add-catering') setShowCateringForm(true);
-      else matched = false;
-      if (matched) window.history.replaceState(null, '', window.location.pathname);
+      const targets = {
+        '#add-production': setShowForm,
+        '#add-activity': setShowActivityLog,
+        '#upload-report': setShowUploadReport,
+        '#add-catering': setShowCateringForm,
+      };
+      if (!(hash in targets)) return;
+      // Close all, then open the targeted one. Avoids modal stacking.
+      setShowForm(false);
+      setShowActivityLog(false);
+      setShowUploadReport(false);
+      setShowCateringForm(false);
+      targets[hash](true);
+      window.history.replaceState(null, '', window.location.pathname);
     };
     handleHash();
     window.addEventListener('hashchange', handleHash);
