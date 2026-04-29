@@ -93,13 +93,18 @@ export default function HotelPerformance() {
       prospect: hotelProduction.filter(p => p.status === 'prospect').length,
       tentative: hotelProduction.filter(p => p.status === 'tentative').length,
       definite: hotelProduction.filter(p => p.status === 'definite').length,
-      actual: hotelProduction.filter(p => p.status === 'actual').length,
+      actual: hotelProduction.filter(p => p.status === 'actual_pickup').length,  // enum is actual_pickup
       lost: hotelProduction.filter(p => p.status === 'lost').length
     };
 
     const totalLeads = hotelProduction.length;
-    const conversionRate = statusCounts.solicitation > 0
-      ? ((statusCounts.definite + statusCounts.actual) / statusCounts.solicitation * 100)
+    // Two-stage funnel: Conversion = % that became Definite (forward-looking
+    // close rate). Actualization = % that actually showed up post-stay.
+    const conversionRate = totalLeads > 0
+      ? ((statusCounts.definite + statusCounts.actual) / totalLeads * 100)
+      : 0;
+    const actualizationRate = totalLeads > 0
+      ? (statusCounts.actual / totalLeads * 100)
       : 0;
 
     const pipelineValue = hotelProduction
@@ -116,6 +121,7 @@ export default function HotelPerformance() {
       adr,
       totalLeads,
       conversionRate,
+      actualizationRate,
       pipelineValue,
       hotelProduction,
       ...statusCounts
@@ -143,9 +149,14 @@ export default function HotelPerformance() {
   const currentRevenue = filteredProduction.reduce((sum, p) => sum + (p.revenue || 0), 0);
   const currentRoomNights = filteredProduction.reduce((sum, p) => sum + (p.room_nights || 0), 0);
 
-  const totalSolicitations = filteredProduction.filter(p => p.status === 'solicitation').length;
-  const totalDefinite = filteredProduction.filter(p => ['definite', 'actual'].includes(p.status)).length;
-  const overallConversionRate = totalSolicitations > 0 ? (totalDefinite / totalSolicitations * 100) : 0;
+  // Two-stage funnel:
+  //   Conversion       = leads that became Definite (or beyond)
+  //   Actualization    = leads that actually showed up (status='actual_pickup')
+  const totalLeadsAll = filteredProduction.length;
+  const totalDefinite = filteredProduction.filter(p => ['definite', 'actual_pickup'].includes(p.status)).length;
+  const totalActualized = filteredProduction.filter(p => p.status === 'actual_pickup').length;
+  const overallConversionRate = totalLeadsAll > 0 ? (totalDefinite / totalLeadsAll * 100) : 0;
+  const overallActualizationRate = totalLeadsAll > 0 ? (totalActualized / totalLeadsAll * 100) : 0;
   const paceData = [
     { metric: 'Revenue', Current: currentRevenue, STLY: stlyRevenue, Budget: totalBudgetRevenue },
     { metric: 'Room Nights', Current: currentRoomNights, STLY: stlyRoomNights, Budget: totalBudgetRoomNights }
@@ -406,8 +417,19 @@ export default function HotelPerformance() {
                   <div className="flex items-center gap-3">
                     <Award className="w-8 h-8 text-purple-400" />
                     <div>
-                      <p className="text-sm text-slate-400">Overall Conversion Rate</p>
+                      <p className="text-sm text-slate-400">Conversion (Definite)</p>
                       <p className="text-xl font-bold text-white">{overallConversionRate.toFixed(1)}%</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3">
+                    <Award className="w-8 h-8 text-cyan-400" />
+                    <div>
+                      <p className="text-sm text-slate-400">Actualized (Stayed)</p>
+                      <p className="text-xl font-bold text-white">{overallActualizationRate.toFixed(1)}%</p>
                     </div>
                   </div>
                 </CardContent>
@@ -442,8 +464,9 @@ export default function HotelPerformance() {
                   <div className="flex items-center gap-3">
                     <Award className="w-8 h-8 text-purple-400" />
                     <div>
-                      <p className="text-sm text-slate-400">Conversion Rate</p>
+                      <p className="text-sm text-slate-400">Conversion (Definite)</p>
                       <p className="text-xl font-bold text-white">{hotelMetrics[0]?.conversionRate.toFixed(1)}%</p>
+                      <p className="text-xs text-slate-500 mt-1">Actualized: {hotelMetrics[0]?.actualizationRate.toFixed(1)}%</p>
                     </div>
                   </div>
                 </CardContent>

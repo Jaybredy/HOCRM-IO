@@ -120,15 +120,21 @@ export default function MyPerformance() {
       prospect: data.filter(i => i.status === 'prospect').length,
       tentative: data.filter(i => i.status === 'tentative').length,
       definite: data.filter(i => i.status === 'definite').length,
-      actual: data.filter(i => i.status === 'actual').length,
+      actual: data.filter(i => i.status === 'actual_pickup').length,  // enum value is actual_pickup
       lost: data.filter(i => i.status === 'lost').length
     };
 
-    const conversionRate = byStatus.solicitation > 0 
-      ? ((byStatus.definite + byStatus.actual) / byStatus.solicitation * 100) 
+    // Two-stage funnel: Conversion = leads that became Definite,
+    // Actualization = leads that actually showed up post-stay.
+    const totalLeads = data.length;
+    const conversionRate = totalLeads > 0
+      ? ((byStatus.definite + byStatus.actual) / totalLeads * 100)
+      : 0;
+    const actualizationRate = totalLeads > 0
+      ? (byStatus.actual / totalLeads * 100)
       : 0;
 
-    return { totalRoomNights, totalRevenue, adr, byStatus, conversionRate, totalLeads: data.length };
+    return { totalRoomNights, totalRevenue, adr, byStatus, conversionRate, actualizationRate, totalLeads };
   };
 
   const currentKPIs = calculateKPIs(sellerProduction);
@@ -291,7 +297,8 @@ export default function MyPerformance() {
           <KPICard title="Total Room Nights" value={currentKPIs.totalRoomNights} change={calculateChange(currentKPIs.totalRoomNights, previousKPIs.totalRoomNights)} icon={Bed} format={(v) => v.toLocaleString()} />
           <KPICard title="Total Revenue" value={currentKPIs.totalRevenue} change={calculateChange(currentKPIs.totalRevenue, previousKPIs.totalRevenue)} icon={DollarSign} format={(v) => `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} />
           <KPICard title="Average ADR" value={currentKPIs.adr} change={calculateChange(currentKPIs.adr, previousKPIs.adr)} icon={TrendingUp} format={(v) => `$${v.toFixed(2)}`} />
-          <KPICard title="Conversion Rate" value={currentKPIs.conversionRate} change={calculateChange(currentKPIs.conversionRate, previousKPIs.conversionRate)} icon={Target} format={(v) => `${v.toFixed(1)}%`} />
+          <KPICard title="Conversion (Definite)" value={currentKPIs.conversionRate} change={calculateChange(currentKPIs.conversionRate, previousKPIs.conversionRate)} icon={Target} format={(v) => `${v.toFixed(1)}%`} />
+          <KPICard title="Actualized (Stayed)" value={currentKPIs.actualizationRate} change={calculateChange(currentKPIs.actualizationRate, previousKPIs.actualizationRate)} icon={Target} format={(v) => `${v.toFixed(1)}%`} />
         </div>
 
         {/* Charts Row 1 */}
