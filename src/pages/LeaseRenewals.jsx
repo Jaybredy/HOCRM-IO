@@ -180,7 +180,7 @@ export default function LeaseRenewals() {
     searchText.toLowerCase().includes(r.renewal_status)
   );
 
-  const firstName = user?.full_name?.split(' ')[0] || 'there';
+  const firstName = (user?.display_name) || user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-4 md:p-6">

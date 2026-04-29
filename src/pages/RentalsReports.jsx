@@ -196,7 +196,7 @@ export default function RentalsReports() {
     }
   };
 
-  const firstName = user?.full_name?.split(' ')[0] || 'there';
+  const firstName = (user?.display_name) || user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
   const metrics = [
     { label: 'Total Units', value: totalUnits, icon: Building2, color: 'text-blue-400', bg: 'bg-blue-400/10' },
     { label: 'Occupancy Rate', value: `${occupancyRate}%`, icon: Users, color: 'text-green-400', bg: 'bg-green-400/10' },

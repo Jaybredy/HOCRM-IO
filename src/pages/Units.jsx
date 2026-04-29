@@ -66,9 +66,16 @@ export default function Units() {
   const { data: hotels = [] } = useQuery({
     queryKey: ['hotels'],
     queryFn: async () => {
-      const allHotels = await base44.entities.Hotel.list();
-      const filtered = user ? allHotels.filter(h => h.created_by === user.email) : allHotels;
-      return filtered.filter(h => h.hotel_type === 'apartment' || h.hotel_type === undefined);
+      // RLS already scopes the result to hotels the user can see (via
+      // has_hotel_access). The previous filter `created_by === user.email`
+      // excluded any hotel the caller didn't personally create — which
+      // broke the Units feature for invited collaborators (test users had
+      // empty dropdowns, the audit-flagged blocker C1). Drop the email
+      // filter; trust RLS.
+      // The hotel_type filter (apartment-only) is also dropped: hotels
+      // created as type='hotel' should still be selectable here for
+      // properties that mix group sales + extended-stay units.
+      return await base44.entities.Hotel.list();
     },
     enabled: !!user
   });
@@ -170,7 +177,7 @@ export default function Units() {
     { label: 'Maintenance', value: units.filter(u => u.status === 'maintenance').length, icon: Building2, color: 'text-amber-400', bg: 'bg-amber-400/10' },
   ];
 
-  const firstName = user?.full_name?.split(' ')[0] || 'there';
+  const firstName = (user?.display_name) || user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
