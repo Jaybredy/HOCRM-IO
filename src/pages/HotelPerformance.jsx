@@ -19,6 +19,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 export default function HotelPerformance() {
   const [exporting, setExporting] = useState(false);
   const [selectedHotelId, setSelectedHotelId] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [dateRange, setDateRange] = useState({
     start: startOfYear(new Date()).toISOString().split('T')[0],
     end: endOfYear(new Date()).toISOString().split('T')[0]
@@ -47,7 +48,8 @@ export default function HotelPerformance() {
   const filteredProduction = allProduction.filter(item => {
     const dateMatch = item.arrival_date >= dateRange.start && item.arrival_date <= dateRange.end;
     const hotelMatch = selectedHotelId === 'all' || item.hotel_id === selectedHotelId;
-    return dateMatch && hotelMatch;
+    const statusMatch = selectedStatus === 'all' || item.status === selectedStatus;
+    return dateMatch && hotelMatch && statusMatch;
   });
 
   const stlyStart = new Date(dateRange.start);
@@ -299,19 +301,36 @@ export default function HotelPerformance() {
           <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
             <CardContent className="p-4">
               <div className="flex flex-col gap-4">
-                <div>
-                  <Label className="mb-2 block text-slate-300">Hotel</Label>
-                  <Select value={selectedHotelId} onValueChange={setSelectedHotelId}>
-                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                      <SelectValue placeholder="Select hotel" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="all" className="text-white">All Hotels</SelectItem>
-                      {hotels.map(hotel => (
-                        <SelectItem key={hotel.id} value={hotel.id} className="text-white">{hotel.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="mb-2 block text-slate-300">Hotel</Label>
+                    <Select value={selectedHotelId} onValueChange={setSelectedHotelId}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue placeholder="Select hotel" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="all" className="text-white">All Hotels</SelectItem>
+                        {hotels.map(hotel => (
+                          <SelectItem key={hotel.id} value={hotel.id} className="text-white">{hotel.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="mb-2 block text-slate-300">Status</Label>
+                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="all" className="text-white">All statuses</SelectItem>
+                        <SelectItem value="prospect" className="text-white">Prospect</SelectItem>
+                        <SelectItem value="tentative" className="text-white">Tentative</SelectItem>
+                        <SelectItem value="definite" className="text-white">Definite</SelectItem>
+                        <SelectItem value="actual_pickup" className="text-white">Actual Pickup</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div>

@@ -17,6 +17,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'
 export default function MyPerformance() {
   const [selectedSeller, setSelectedSeller] = useState('');
   const [sellerType, setSellerType] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [dateRange, setDateRange] = useState({
     start: startOfYear(new Date()).toISOString().split('T')[0],
     end: endOfYear(new Date()).toISOString().split('T')[0]
@@ -86,10 +87,11 @@ export default function MyPerformance() {
     URL.revokeObjectURL(url);
   };
 
-  // Filter data for selected seller and date range
+  // Filter data for selected seller, status, and date range
   const sellerProduction = allProduction.filter(item => {
     if (selectedSeller && item.seller_name !== selectedSeller) return false;
     if (sellerType !== 'all' && (item.seller_type || 'hotel_sales') !== sellerType) return false;
+    if (selectedStatus !== 'all' && item.status !== selectedStatus) return false;
     if (item.activity_date < dateRange.start || item.activity_date > dateRange.end) return false;
     return true;
   });
@@ -256,8 +258,23 @@ export default function MyPerformance() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label className="text-slate-300">Status</Label>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white [&_svg]:text-white [&>span]:text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="prospect">Prospect</SelectItem>
+                  <SelectItem value="tentative">Tentative</SelectItem>
+                  <SelectItem value="definite">Definite</SelectItem>
+                  <SelectItem value="actual_pickup">Actual Pickup</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label className="text-slate-300">Start Date</Label>
-              <Input 
+              <Input
                 type="date"
                 value={dateRange.start}
                 onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
