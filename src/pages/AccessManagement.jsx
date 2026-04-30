@@ -215,21 +215,28 @@ export default function AccessManagement() {
               // property's id since user_property_access.property_id points there.
               const hotelEntries = properties.filter(p => p.hotel_type !== undefined);
               const propertyEntries = properties.filter(p => p.hotel_type === undefined);
-              const propByHotelId = Object.fromEntries(
-                propertyEntries.filter(p => p.hotel_id).map(p => [p.hotel_id, p])
-              );
+              // A hotel may have ≥1 linked properties (e.g. Hotel C + Hotel C
+              // Annex). Group all linked properties by hotel_id so the merged
+              // card can sum grants across every linked property.
+              const propsByHotelId = {};
+              for (const p of propertyEntries) {
+                if (!p.hotel_id) continue;
+                (propsByHotelId[p.hotel_id] ||= []).push(p);
+              }
               const standaloneProps = propertyEntries.filter(p => !p.hotel_id);
               const cards = [
                 ...hotelEntries.map(h => {
-                  const linked = propByHotelId[h.id];
+                  const linked = propsByHotelId[h.id] || [];
+                  const linkedIds = linked.map(p => p.id);
                   return {
                     key: h.id,
                     name: h.name,
                     type: h.hotel_type || 'HOTEL',
                     location: h.location || 'No location',
-                    status: h.is_active === false ? 'inactive' : (linked?.status || 'active'),
-                    grantPropertyId: linked?.id,
-                    raw: linked || h,
+                    status: h.is_active === false ? 'inactive' : 'active',
+                    linkedIds,
+                    linkedCount: linked.length,
+                    raw: linked[0] || h,
                   };
                 }),
                 ...standaloneProps.map(p => ({
@@ -238,13 +245,14 @@ export default function AccessManagement() {
                   type: p.type || 'HOTEL',
                   location: p.address || p.location || 'No location',
                   status: p.status || 'active',
-                  grantPropertyId: p.id,
+                  linkedIds: [p.id],
+                  linkedCount: 0,
                   raw: p,
                 })),
               ];
               return cards.map(c => {
-                const grantCount = c.grantPropertyId
-                  ? activeGrants.filter(g => g.property_id === c.grantPropertyId).length + epicUserCount
+                const grantCount = c.linkedIds.length
+                  ? activeGrants.filter(g => c.linkedIds.includes(g.property_id)).length + epicUserCount
                   : epicUserCount;
                 return (
                   <div
@@ -261,6 +269,9 @@ export default function AccessManagement() {
                           {c.status}
                         </Badge>
                         <span className="text-xs text-blue-400">{grantCount} user{grantCount !== 1 ? 's' : ''}</span>
+                        {c.linkedCount > 1 && (
+                          <span className="text-xs text-slate-400">{c.linkedCount} properties</span>
+                        )}
                       </div>
                     </div>
                   </div>
