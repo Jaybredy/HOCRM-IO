@@ -427,15 +427,32 @@ export default function AccessManagement() {
                 <th className="text-left pb-2">Time</th>
               </tr></thead>
               <tbody>
-                {auditLogs.map(l => (
-                  <tr key={l.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/50">
-                    <td className="py-1.5 text-slate-200">{l.actor_email}</td>
-                    <td className="py-1.5"><Badge className={`text-xs ${l.success ? 'bg-slate-700 text-slate-200' : 'bg-red-900/50 text-red-400'}`}>{l.action}</Badge></td>
-                    <td className="py-1.5 text-slate-200">{l.property_id ? (propMap[l.property_id]?.name || l.property_id) : '—'}</td>
-                    <td className="py-1.5 text-slate-400 max-w-xs truncate">{l.details || '—'}</td>
-                    <td className="py-1.5 text-slate-400">{new Date(l.created_date).toLocaleString()}</td>
-                  </tr>
-                ))}
+                {auditLogs.map(l => {
+                  // details is a jsonb object (e.g. role_change writes
+                  // {new_role, old_role, actor_role, target_email}). React
+                  // can't render an object as a child — format common shapes
+                  // and JSON.stringify the rest.
+                  let detailsText = '—';
+                  if (l.details) {
+                    if (typeof l.details === 'string') {
+                      detailsText = l.details;
+                    } else if (l.details.old_role && l.details.new_role) {
+                      const target = l.details.target_email ? ` (${l.details.target_email})` : '';
+                      detailsText = `${l.details.old_role} → ${l.details.new_role}${target}`;
+                    } else {
+                      try { detailsText = JSON.stringify(l.details); } catch { detailsText = '[object]'; }
+                    }
+                  }
+                  return (
+                    <tr key={l.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/50">
+                      <td className="py-1.5 text-slate-200">{l.actor_email}</td>
+                      <td className="py-1.5"><Badge className={`text-xs ${l.success ? 'bg-slate-700 text-slate-200' : 'bg-red-900/50 text-red-400'}`}>{l.action}</Badge></td>
+                      <td className="py-1.5 text-slate-200">{l.property_id ? (propMap[l.property_id]?.name || l.property_id) : '—'}</td>
+                      <td className="py-1.5 text-slate-400 max-w-xs truncate">{detailsText}</td>
+                      <td className="py-1.5 text-slate-400">{new Date(l.created_date).toLocaleString()}</td>
+                    </tr>
+                  );
+                })}
                 {auditLogs.length === 0 && <tr><td colSpan={5} className="py-4 text-center text-slate-400">No audit logs yet</td></tr>}
               </tbody>
             </table>
