@@ -101,7 +101,8 @@ export default function Units() {
       queryClient.invalidateQueries({ queryKey: ['units'] });
       setShowDialog(false);
       setFormData(BLANK_FORM);
-    }
+    },
+    onError: (err) => alert('Failed to create unit: ' + (err?.message || 'Unknown error')),
   });
 
   const updateMutation = useMutation({
@@ -111,12 +112,14 @@ export default function Units() {
       setShowDialog(false);
       setFormData(BLANK_FORM);
       setEditUnit(null);
-    }
+    },
+    onError: (err) => alert('Failed to update unit: ' + (err?.message || 'Unknown error')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Unit.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['units'] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['units'] }),
+    onError: (err) => alert('Failed to delete unit: ' + (err?.message || 'Unknown error')),
   });
 
   const handleEdit = (unit) => {
