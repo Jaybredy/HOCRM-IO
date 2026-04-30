@@ -72,7 +72,7 @@ export default function AccessManagement() {
         if (existing) {
           return base44.entities.UserPropertyAccess.update(existing.id, { role_at_property: data.role_at_property, access_level, expires_at: data.expires_at || null, is_active: true });
         }
-        return base44.entities.UserPropertyAccess.create({ user_email: data.user_email, property_id: pid, role_at_property: data.role_at_property, access_level, expires_at: data.expires_at || null, granted_by: user?.email, is_active: true });
+        return base44.entities.UserPropertyAccess.create({ user_email: data.user_email, property_id: pid, role_at_property: data.role_at_property, access_level, expires_at: data.expires_at || null, granted_by: user?.id, is_active: true });
       }));
     },
     onSuccess: () => { qc.invalidateQueries(['access-grants']); setShowGrantDialog(false); setGrantForm({ user_email: '', property_ids: [], role_at_property: 'sales_manager', expires_at: '' }); setDuplicateWarning([]); },
