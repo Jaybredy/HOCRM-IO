@@ -118,13 +118,12 @@ export default function AccessManagement() {
 
   if (loading) return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-8 text-slate-400">Loading...</div>;
 
-  // can() requires a propertyId for non-EPIC roles — Settings is page-level
-  // not property-specific, so use roleHasCapability (role-only) here. Without
-  // this, hotel_manager was being incorrectly denied (B-7.g).
-  if (
-    !roleHasCapability(user?.role, CAPABILITIES.PLATFORM_ADMIN) &&
-    !roleHasCapability(user?.role, CAPABILITIES.USER_INVITE_MANAGE)
-  ) {
+  // AccessManagement creates properties + grants cross-hotel access — gate to
+  // PLATFORM_ADMIN only, matching Layout sidebar (hidden from hotel_manager).
+  // hotel_manager already gets UserManagement for invites/role changes within
+  // their hotel via update-user-role + invite-user edge functions, which
+  // enforce ROLE_HIERARCHY + has_hotel_write_access(). Surfaced in B-7.g.
+  if (!roleHasCapability(user?.role, CAPABILITIES.PLATFORM_ADMIN)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-8 flex items-center gap-3 text-red-400">
         <AlertTriangle className="w-5 h-5" />

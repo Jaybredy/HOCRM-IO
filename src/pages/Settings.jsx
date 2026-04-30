@@ -141,18 +141,12 @@ export default function Settings() {
     return <div className="p-8 text-gray-500">Loading...</div>;
   }
 
-  // Page-level guard: only roles that can manage property settings or invite
-  // users should land here. Sidebar already hides this entry for non-admins,
-  // but direct nav (/Settings URL) bypassed the sidebar — surfaced as B-2.
-  // Use roleHasCapability (role-only) instead of can() because can() requires
-  // a propertyId for hotel-scoped roles — Settings is page-level, not
-  // property-specific, so hotel_manager was being incorrectly denied (B-7.g).
-  const role = user?.role;
-  const isAllowed =
-    roleHasCapability(role, CAPABILITIES.PROPERTY_SETTINGS_EDIT) ||
-    roleHasCapability(role, CAPABILITIES.USER_INVITE_MANAGE) ||
-    roleHasCapability(role, CAPABILITIES.PLATFORM_ADMIN);
-  if (!isAllowed) {
+  // Settings is platform-level (Hotels & Rentals lists ALL hotels, Add Property
+  // creates new hotels) — gate to PLATFORM_ADMIN only, matching the Layout
+  // sidebar logic that hides this entry from hotel_manager. Use
+  // roleHasCapability (role-only) instead of can() because can() requires a
+  // propertyId for hotel-scoped roles. Surfaced in B-7.g.
+  if (!roleHasCapability(user?.role, CAPABILITIES.PLATFORM_ADMIN)) {
     return (
       <div className="p-8 flex items-center gap-3 text-red-500">
         <AlertTriangle className="w-5 h-5" />
