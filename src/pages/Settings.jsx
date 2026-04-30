@@ -8,13 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Building2, DollarSign, Target, ChevronDown, Users, Mail, Shield } from "lucide-react";
+import { Plus, Edit, Trash2, Building2, DollarSign, Target, ChevronDown, Users, Mail, Shield, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BudgetManager from "../components/performance/BudgetManager";
 import ActivityGoalsSettings from "../components/activities/ActivityGoalsSettings";
 import SellerActivityTargets from "../components/performance/SellerActivityTargets";
+import { useRBAC } from '@/components/rbac/useRBAC';
+import { CAPABILITIES } from '@/components/rbac/rbac';
 
 export default function Settings() {
+  const { can, loading: rbacLoading } = useRBAC();
   const [showHotelForm, setShowHotelForm] = useState(false);
   const [editingHotel, setEditingHotel] = useState(null);
   const [hotelForm, setHotelForm] = useState({ name: '', location: '', total_rooms: '', is_active: true, hotel_type: 'hotel' });
@@ -130,9 +133,25 @@ export default function Settings() {
     }
   };
 
-  const filteredHotels = propertyTypeFilter === 'all' 
-    ? hotels 
+  const filteredHotels = propertyTypeFilter === 'all'
+    ? hotels
     : hotels.filter(h => (h.hotel_type || 'hotel') === propertyTypeFilter);
+
+  if (rbacLoading) {
+    return <div className="p-8 text-gray-500">Loading...</div>;
+  }
+
+  // Page-level guard: only roles that can manage property settings or invite
+  // users should land here. Sidebar already hides this entry for non-admins,
+  // but direct nav (/Settings URL) bypassed the sidebar — surfaced as B-2.
+  if (!can(CAPABILITIES.PROPERTY_SETTINGS_EDIT) && !can(CAPABILITIES.USER_INVITE_MANAGE) && !can(CAPABILITIES.PLATFORM_ADMIN)) {
+    return (
+      <div className="p-8 flex items-center gap-3 text-red-500">
+        <AlertTriangle className="w-5 h-5" />
+        <span>You don't have permission to access this page.</span>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-8">
