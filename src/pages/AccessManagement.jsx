@@ -75,8 +75,13 @@ export default function AccessManagement() {
   });
 
   const updateUserRoleMutation = useMutation({
-    mutationFn: ({ id, role }) => base44.entities.User.update(id, { role }),
-    onSuccess: () => { qc.invalidateQueries(['all-users']); setEditingUserRole(null); },
+    // Route through the update-user-role edge function so ROLE_HIERARCHY,
+    // self-edit blocking, and audit log entries are enforced. The direct
+    // User.update path skipped all three and additionally tripped the
+    // protect_role_changes trigger for non-admin callers.
+    mutationFn: ({ id, role }) => base44.users.updateUserRole(id, role),
+    onSuccess: () => { qc.invalidateQueries(['all-users']); qc.invalidateQueries(['audit-logs']); setEditingUserRole(null); },
+    onError: (err) => alert('Error updating role: ' + (err?.message || 'Unknown error')),
   });
 
   const updateDisplayNameMutation = useMutation({
@@ -202,23 +207,60 @@ export default function AccessManagement() {
             {(() => {
               const epicRoles = ['admin', 'EPIC_ADMIN', 'EPIC_MANAGER', 'EPIC_VIEWER'];
               const epicUserCount = safeUsers.filter(u => epicRoles.includes(u.role)).length;
-              return properties.map(p => {
-                const propertyGrantCount = activeGrants.filter(g => g.property_id === p.id).length + epicUserCount;
+              // useRBAC merges hotels + properties into `properties`. Hotels carry
+              // `hotel_type`; properties don't. A property linked to a hotel via
+              // hotel_id was previously rendered as a duplicate card next to its
+              // parent hotel. Collapse: one card per logical hotel + standalone
+              // (un-linked) properties separately. Grant count uses the linked
+              // property's id since user_property_access.property_id points there.
+              const hotelEntries = properties.filter(p => p.hotel_type !== undefined);
+              const propertyEntries = properties.filter(p => p.hotel_type === undefined);
+              const propByHotelId = Object.fromEntries(
+                propertyEntries.filter(p => p.hotel_id).map(p => [p.hotel_id, p])
+              );
+              const standaloneProps = propertyEntries.filter(p => !p.hotel_id);
+              const cards = [
+                ...hotelEntries.map(h => {
+                  const linked = propByHotelId[h.id];
+                  return {
+                    key: h.id,
+                    name: h.name,
+                    type: h.hotel_type || 'HOTEL',
+                    location: h.location || 'No location',
+                    status: h.is_active === false ? 'inactive' : (linked?.status || 'active'),
+                    grantPropertyId: linked?.id,
+                    raw: linked || h,
+                  };
+                }),
+                ...standaloneProps.map(p => ({
+                  key: p.id,
+                  name: p.name,
+                  type: p.type || 'HOTEL',
+                  location: p.address || p.location || 'No location',
+                  status: p.status || 'active',
+                  grantPropertyId: p.id,
+                  raw: p,
+                })),
+              ];
+              return cards.map(c => {
+                const grantCount = c.grantPropertyId
+                  ? activeGrants.filter(g => g.property_id === c.grantPropertyId).length + epicUserCount
+                  : epicUserCount;
                 return (
                   <div
-                    key={p.id}
+                    key={c.key}
                     className="border border-slate-500 rounded-lg p-3 bg-slate-700/60 flex items-start gap-2 cursor-pointer hover:bg-slate-600/60 hover:border-blue-500 transition-colors"
-                    onClick={() => setSelectedProperty(p)}
+                    onClick={() => setSelectedProperty(c.raw)}
                   >
                     <Building2 className="w-4 h-4 text-blue-300 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-white">{p.name}</p>
-                      <p className="text-xs text-slate-300">{p.type} · {p.location || 'No location'}</p>
+                      <p className="font-medium text-sm text-white">{c.name}</p>
+                      <p className="text-xs text-slate-300">{c.type} · {c.location}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge className={p.status === 'active' ? 'bg-emerald-900/50 text-emerald-300 text-xs' : 'bg-slate-600 text-slate-300 text-xs'}>
-                          {p.status}
+                        <Badge className={c.status === 'active' ? 'bg-emerald-900/50 text-emerald-300 text-xs' : 'bg-slate-600 text-slate-300 text-xs'}>
+                          {c.status}
                         </Badge>
-                        <span className="text-xs text-blue-400">{propertyGrantCount} user{propertyGrantCount !== 1 ? 's' : ''}</span>
+                        <span className="text-xs text-blue-400">{grantCount} user{grantCount !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
                   </div>
