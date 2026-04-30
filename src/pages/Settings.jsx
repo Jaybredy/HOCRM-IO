@@ -21,7 +21,8 @@ export default function Settings() {
   const [propertyTypeFilter, setPropertyTypeFilter] = useState('all');
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('user');
+  const [inviteRole, setInviteRole] = useState('sales_manager');
+  const [inviteHotelId, setInviteHotelId] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -31,12 +32,13 @@ export default function Settings() {
   });
 
   const inviteMutation = useMutation({
-    mutationFn: (data) => base44.users.inviteUser(data.email, data.role),
+    mutationFn: (data) => base44.users.inviteUser(data.email, data.role, '', data.hotel_id && data.hotel_id !== '__none__' ? data.hotel_id : null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowInviteDialog(false);
       setInviteEmail('');
-      setInviteRole('user');
+      setInviteRole('sales_manager');
+      setInviteHotelId('');
     },
     onError: (error) => alert(`Error inviting user: ${error.message}`)
   });
@@ -44,7 +46,13 @@ export default function Settings() {
   const handleInvite = (e) => {
     e.preventDefault();
     if (!inviteEmail) return;
-    inviteMutation.mutate({ email: inviteEmail, role: inviteRole });
+    // sales_manager / hotel_manager require a hotel scope
+    const needsHotel = inviteRole === 'sales_manager' || inviteRole === 'hotel_manager';
+    if (needsHotel && (!inviteHotelId || inviteHotelId === '__none__')) {
+      alert('Pick a hotel for sales_manager / hotel_manager invitees.');
+      return;
+    }
+    inviteMutation.mutate({ email: inviteEmail, role: inviteRole, hotel_id: inviteHotelId });
   };
 
   const { data: hotels = [] } = useQuery({
@@ -58,9 +66,32 @@ export default function Settings() {
   });
 
   const createHotel = useMutation({
-    mutationFn: (data) => base44.entities.Hotel.create(data),
+    mutationFn: async (data) => {
+      const hotel = await base44.entities.Hotel.create(data);
+      // Auto-create the matching properties row so the hotel is immediately
+      // scopable (Grant Access, Invite User with hotel_id, etc. all FK to
+      // properties.id, not hotels.id). Without this, the hotel is invisible
+      // to the access system. Idempotent on re-run thanks to filter below.
+      try {
+        const existing = await base44.entities.Property.filter({ hotel_id: hotel.id });
+        if (!existing || existing.length === 0) {
+          await base44.entities.Property.create({
+            name: hotel.name,
+            type: (hotel.hotel_type || 'hotel').toUpperCase() === 'RENTAL' ? 'RENTAL' : 'HOTEL',
+            address: hotel.location || null,
+            status: 'active',
+            hotel_id: hotel.id,
+          });
+        }
+      } catch (e) {
+        // Surface but don't roll back hotel creation — admin can fix later.
+        console.error('Hotel created but matching property row failed:', e);
+      }
+      return hotel;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hotels'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
       setShowHotelForm(false);
       resetHotelForm();
     }
@@ -351,10 +382,25 @@ export default function Settings() {
                     <Select value={inviteRole} onValueChange={setInviteRole}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="sales_manager">Sales Manager</SelectItem>
+                        <SelectItem value="hotel_manager">Hotel Manager</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="user">User (no hotel scope)</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div>
+                    <Label>Hotel {(inviteRole === 'sales_manager' || inviteRole === 'hotel_manager') && <span className="text-red-500">*</span>}</Label>
+                    <Select value={inviteHotelId} onValueChange={setInviteHotelId}>
+                      <SelectTrigger><SelectValue placeholder="Select hotel (required for hotel-scoped roles)" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">No hotel scope</SelectItem>
+                        {(hotels || []).filter(h => h.is_active !== false).map(h => (
+                          <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-1">Auto-creates the property record + grants access on invite.</p>
                   </div>
                   <div className="flex gap-2">
                     <Button type="submit" className="flex-1" disabled={inviteMutation.isPending}>

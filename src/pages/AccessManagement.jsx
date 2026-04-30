@@ -21,7 +21,7 @@ export default function AccessManagement() {
   const [editingDisplayName, setEditingDisplayName] = useState(null);
   const [editingPropertyGrant, setEditingPropertyGrant] = useState(null);
   const [grantForm, setGrantForm] = useState({ user_email: '', property_ids: [], role_at_property: 'sales_manager', expires_at: '' });
-  const [propertyForm, setPropertyForm] = useState({ name: '', type: 'HOTEL', status: 'active', location: '' });
+  const [propertyForm, setPropertyForm] = useState({ name: '', type: 'HOTEL', status: 'active', location: '', hotel_id: '' });
   const [search, setSearch] = useState('');
   const [selectedUserEmail, setSelectedUserEmail] = useState(null);
   const [duplicateWarning, setDuplicateWarning] = useState([]);
@@ -49,9 +49,23 @@ export default function AccessManagement() {
     enabled: !loading,
   });
 
+  const { data: hotelsList = [] } = useQuery({
+    queryKey: ['hotels-am'],
+    queryFn: () => base44.entities.Hotel.filter({ is_active: true }),
+    enabled: !loading,
+  });
+
   const createPropertyMutation = useMutation({
-    mutationFn: (data) => base44.entities.Property.create(data),
-    onSuccess: () => { qc.invalidateQueries(['access-grants']); setShowPropertyDialog(false); setPropertyForm({ name: '', type: 'HOTEL', status: 'active', location: '' }); },
+    mutationFn: (data) => base44.entities.Property.create({
+      ...data,
+      hotel_id: data.hotel_id && data.hotel_id !== '__none__' ? data.hotel_id : null,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries(['access-grants']);
+      qc.invalidateQueries(['properties']);
+      setShowPropertyDialog(false);
+      setPropertyForm({ name: '', type: 'HOTEL', status: 'active', location: '', hotel_id: '' });
+    },
   });
 
   const updateUserRoleMutation = useMutation({
@@ -663,6 +677,19 @@ export default function AccessManagement() {
             <div>
               <Label className="text-slate-300">Location</Label>
               <Input value={propertyForm.location} onChange={e => setPropertyForm(f => ({ ...f, location: e.target.value }))} placeholder="City or address" className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500" />
+            </div>
+            <div>
+              <Label className="text-slate-300">Linked Hotel</Label>
+              <Select value={propertyForm.hotel_id || '__none__'} onValueChange={v => setPropertyForm(f => ({ ...f, hotel_id: v }))}>
+                <SelectTrigger className="bg-slate-800 border-slate-600 text-white"><SelectValue placeholder="Pick parent hotel (recommended)" /></SelectTrigger>
+                <SelectContent className="bg-white border-slate-200">
+                  <SelectItem value="__none__" className="text-slate-900 focus:bg-slate-100">No hotel</SelectItem>
+                  {(hotelsList || []).map(h => (
+                    <SelectItem key={h.id} value={h.id} className="text-slate-900 focus:bg-slate-100">{h.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-400 mt-1">Required for the property to inherit hotel-scoped data isolation.</p>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setShowPropertyDialog(false)} className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">Cancel</Button>
