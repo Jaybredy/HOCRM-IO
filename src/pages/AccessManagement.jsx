@@ -56,10 +56,16 @@ export default function AccessManagement() {
   });
 
   const createPropertyMutation = useMutation({
-    mutationFn: (data) => base44.entities.Property.create({
-      ...data,
-      hotel_id: data.hotel_id && data.hotel_id !== '__none__' ? data.hotel_id : null,
-    }),
+    mutationFn: (data) => {
+      // properties table column is `address`, not `location` — old form
+      // never round-tripped (PGRST204 on insert). Translate at the boundary.
+      const { location, ...rest } = data;
+      return base44.entities.Property.create({
+        ...rest,
+        address: location || null,
+        hotel_id: data.hotel_id && data.hotel_id !== '__none__' ? data.hotel_id : null,
+      });
+    },
     onSuccess: () => {
       qc.invalidateQueries(['access-grants']);
       qc.invalidateQueries(['properties']);
