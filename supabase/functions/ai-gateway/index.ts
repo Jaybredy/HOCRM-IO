@@ -56,12 +56,14 @@ Deno.serve(async (req) => {
 
     // Hard block: only EPIC_ADMIN
     if (role !== 'EPIC_ADMIN') {
-      await supabaseAdmin.from('audit_logs').insert({
-        actor_email: email, actor_role: role,
-        action: 'AI_CALL_BLOCKED',
-        details: `AI access denied for role ${role}`,
-        success: false,
-      }).catch(() => {});
+      try {
+        await supabaseAdmin.from('audit_logs').insert({
+          actor_email: email, actor_role: role,
+          action: 'AI_CALL_BLOCKED',
+          details: `AI access denied for role ${role}`,
+          success: false,
+        });
+      } catch { /* audit log failures must not block the response */ }
 
       return json({ error: 'AI_USE is restricted to EPIC_ADMIN only' }, 403);
     }
@@ -69,12 +71,14 @@ Deno.serve(async (req) => {
     // Rate limit check (persisted to audit_logs)
     const current = await getDailyUsage(supabaseAdmin, email);
     if (current >= DAILY_LIMIT) {
-      await supabaseAdmin.from('audit_logs').insert({
-        actor_email: email, actor_role: role,
-        action: 'AI_CALL_BLOCKED',
-        details: `Daily AI limit (${DAILY_LIMIT}) exceeded`,
-        success: false,
-      }).catch(() => {});
+      try {
+        await supabaseAdmin.from('audit_logs').insert({
+          actor_email: email, actor_role: role,
+          action: 'AI_CALL_BLOCKED',
+          details: `Daily AI limit (${DAILY_LIMIT}) exceeded`,
+          success: false,
+        });
+      } catch { /* audit log failures must not block the response */ }
 
       return json({ error: `Daily AI limit of ${DAILY_LIMIT} calls reached` }, 429);
     }
@@ -86,12 +90,17 @@ Deno.serve(async (req) => {
       return json({ error: 'prompt is required' }, 400);
     }
 
-    // Record usage for rate limiting
-    await supabaseAdmin.from('audit_logs').insert({
-      user_email: email, actor_email: email, actor_role: role,
-      action: 'ai_gateway_call',
-      success: true,
-    }).catch(() => {});
+    // Record usage for rate limiting. Wrap in try/catch since the
+    // Supabase query builder doesn't expose .catch() directly on
+    // .insert() — chaining it threw 'catch is not a function' on every
+    // call and 500'd the whole AI request.
+    try {
+      await supabaseAdmin.from('audit_logs').insert({
+        user_email: email, actor_email: email, actor_role: role,
+        action: 'ai_gateway_call',
+        success: true,
+      });
+    } catch { /* audit log failures must not block the AI call */ }
 
     // Build messages for Anthropic API
     const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
@@ -139,12 +148,14 @@ Deno.serve(async (req) => {
     }
 
     // Audit successful call
-    await supabaseAdmin.from('audit_logs').insert({
-      actor_email: email, actor_role: role,
-      action: 'AI_CALL',
-      details: `Prompt: ${prompt.slice(0, 100)}...`,
-      success: true,
-    }).catch(() => {});
+    try {
+      await supabaseAdmin.from('audit_logs').insert({
+        actor_email: email, actor_role: role,
+        action: 'AI_CALL',
+        details: `Prompt: ${prompt.slice(0, 100)}...`,
+        success: true,
+      });
+    } catch { /* audit log failures must not block the response */ }
 
     return json({ result });
   } catch (error) {
