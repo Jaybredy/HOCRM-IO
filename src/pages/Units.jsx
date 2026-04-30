@@ -96,7 +96,19 @@ export default function Units() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Unit.create(data),
+    // units.property_id is NOT NULL but the form only collects hotel_id
+    // (per the rentals UX). Resolve to a property in the chosen hotel.
+    mutationFn: async (data) => {
+      let property_id = data.property_id;
+      if (!property_id && data.hotel_id) {
+        const candidates = await base44.entities.Property.filter({ hotel_id: data.hotel_id });
+        property_id = candidates?.[0]?.id;
+        if (!property_id) {
+          throw new Error('Selected hotel has no property record. Add a property under this hotel first (Access Control → New Property).');
+        }
+      }
+      return base44.entities.Unit.create({ ...data, property_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['units'] });
       setShowDialog(false);
