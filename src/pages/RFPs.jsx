@@ -75,9 +75,12 @@ export default function RFPs() {
   const totalRoomNights = filtered.reduce((s, r) => s + (r.potential_room_nights || 0), 0);
 
   const handleDelete = async (id) => {
-    if (confirm('Delete this RFP?')) {
+    if (!confirm('Delete this RFP?')) return;
+    try {
       await base44.entities.RFP.delete(id);
       queryClient.invalidateQueries({ queryKey: ['rfps'] });
+    } catch (err) {
+      alert('Failed to delete RFP: ' + (err?.message || 'Unknown error'));
     }
   };
 

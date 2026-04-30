@@ -135,11 +135,23 @@ export default function Clients() {
     if (!confirm(`Assign ${unlinked.length} unlinked client(s) to this property?`)) return;
     setBulkAssigning(true);
     const propertyType = hotels.find(h => h.id === filterProperty) ? 'hotel' : 'rental';
+    let succeeded = 0;
+    const failures = [];
     for (const c of unlinked) {
-      await base44.entities.Client.update(c.id, { property_id: filterProperty, property_type: propertyType });
+      try {
+        await base44.entities.Client.update(c.id, { property_id: filterProperty, property_type: propertyType });
+        succeeded += 1;
+      } catch (err) {
+        failures.push({ name: c.company_name || c.id, message: err?.message || 'Unknown error' });
+      }
     }
     setBulkAssigning(false);
     queryClient.invalidateQueries({ queryKey: ['clients'] });
+    if (failures.length > 0) {
+      alert(`Assigned ${succeeded} of ${unlinked.length} clients. ${failures.length} failed:\n` +
+            failures.slice(0, 5).map(f => `• ${f.name}: ${f.message}`).join('\n') +
+            (failures.length > 5 ? `\n…and ${failures.length - 5} more.` : ''));
+    }
   };
 
   const handleEdit = (client) => { setEditClient(client); setFormData(client); setShowDialog(true); };
