@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/components/rbac/useRBAC';
-import { CAPABILITIES, ROLE_LABELS, ROLE_COLORS } from '@/components/rbac/rbac';
+import { CAPABILITIES, ROLE_LABELS, ROLE_COLORS, roleHasCapability } from '@/components/rbac/rbac';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -118,7 +118,13 @@ export default function AccessManagement() {
 
   if (loading) return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-8 text-slate-400">Loading...</div>;
 
-  if (!can(CAPABILITIES.PLATFORM_ADMIN) && !can(CAPABILITIES.USER_INVITE_MANAGE)) {
+  // can() requires a propertyId for non-EPIC roles — Settings is page-level
+  // not property-specific, so use roleHasCapability (role-only) here. Without
+  // this, hotel_manager was being incorrectly denied (B-7.g).
+  if (
+    !roleHasCapability(user?.role, CAPABILITIES.PLATFORM_ADMIN) &&
+    !roleHasCapability(user?.role, CAPABILITIES.USER_INVITE_MANAGE)
+  ) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-8 flex items-center gap-3 text-red-400">
         <AlertTriangle className="w-5 h-5" />

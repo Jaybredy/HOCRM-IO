@@ -14,10 +14,10 @@ import BudgetManager from "../components/performance/BudgetManager";
 import ActivityGoalsSettings from "../components/activities/ActivityGoalsSettings";
 import SellerActivityTargets from "../components/performance/SellerActivityTargets";
 import { useRBAC } from '@/components/rbac/useRBAC';
-import { CAPABILITIES } from '@/components/rbac/rbac';
+import { CAPABILITIES, roleHasCapability } from '@/components/rbac/rbac';
 
 export default function Settings() {
-  const { can, loading: rbacLoading } = useRBAC();
+  const { user, loading: rbacLoading } = useRBAC();
   const [showHotelForm, setShowHotelForm] = useState(false);
   const [editingHotel, setEditingHotel] = useState(null);
   const [hotelForm, setHotelForm] = useState({ name: '', location: '', total_rooms: '', is_active: true, hotel_type: 'hotel' });
@@ -144,7 +144,15 @@ export default function Settings() {
   // Page-level guard: only roles that can manage property settings or invite
   // users should land here. Sidebar already hides this entry for non-admins,
   // but direct nav (/Settings URL) bypassed the sidebar — surfaced as B-2.
-  if (!can(CAPABILITIES.PROPERTY_SETTINGS_EDIT) && !can(CAPABILITIES.USER_INVITE_MANAGE) && !can(CAPABILITIES.PLATFORM_ADMIN)) {
+  // Use roleHasCapability (role-only) instead of can() because can() requires
+  // a propertyId for hotel-scoped roles — Settings is page-level, not
+  // property-specific, so hotel_manager was being incorrectly denied (B-7.g).
+  const role = user?.role;
+  const isAllowed =
+    roleHasCapability(role, CAPABILITIES.PROPERTY_SETTINGS_EDIT) ||
+    roleHasCapability(role, CAPABILITIES.USER_INVITE_MANAGE) ||
+    roleHasCapability(role, CAPABILITIES.PLATFORM_ADMIN);
+  if (!isAllowed) {
     return (
       <div className="p-8 flex items-center gap-3 text-red-500">
         <AlertTriangle className="w-5 h-5" />
