@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { supabase } from '@/api/base44Client';
+import { supabase, clearAuthStorage } from '@/api/base44Client';
 
 const AuthContext = createContext();
 
@@ -14,13 +14,35 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     checkAppState();
 
-    // Listen for auth state changes (sign-in, sign-out, token refresh)
+    // Listen for auth state changes (sign-in, sign-out, token refresh).
+    //
+    // SIGNED_OUT fires both for explicit logout AND when a refresh-token
+    // exchange fails (session genuinely dead). The previous version cleared
+    // user state but left authError as null, so AuthenticatedApp didn't
+    // redirect to /login — the app stayed mounted with no session and RLS
+    // rejected every subsequent query, leaving the user on a broken page
+    // until they manually refreshed.
+    //
+    // We now (a) wipe `sb-*` localStorage so the next sign-in attempt isn't
+    // poisoned by stale token fragments, and (b) set authError so
+    // AuthenticatedApp's <Navigate to="/login"> kicks in. Explicit logout
+    // already triggers a hard navigation in logout() below — the double
+    // clear is harmless.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'SIGNED_OUT') {
+        const sessionLost =
+          event === 'SIGNED_OUT' ||
+          (event === 'TOKEN_REFRESHED' && !session) ||
+          (event === 'USER_DELETED');
+
+        if (sessionLost) {
           setUser(null);
           setIsAuthenticated(false);
-          setAuthError(null);
+          await clearAuthStorage();
+          setAuthError({
+            type: 'auth_required',
+            message: 'Your session has expired. Please sign in again.',
+          });
         } else if (session) {
           await loadAppUser(session);
         }

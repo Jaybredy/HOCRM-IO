@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/api/base44Client';
+import { supabase, clearAuthStorage } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,22 @@ export default function Login() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   const returnTo = searchParams.get('returnTo') || '/';
+
+  // On Login mount: if there's NO valid session, proactively wipe any
+  // stale `sb-*` keys from localStorage. A leftover session (corrupted,
+  // expired-but-not-removed, or from a previous user on a shared device)
+  // can win against the new tokens issued by the next magic-link click,
+  // which is exactly how a real invitee got stuck.
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (cancelled) return;
+      if (!data?.session) {
+        await clearAuthStorage();
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleRedirect = () => {
     // If returnTo is a full URL on the same origin, use navigate with just the path
@@ -158,6 +174,20 @@ export default function Login() {
               >
                 Send Magic Link
               </Button>
+
+              <button
+                type="button"
+                className="w-full text-xs text-slate-500 hover:text-slate-300 mt-2 underline-offset-4 hover:underline"
+                onClick={async () => {
+                  await clearAuthStorage();
+                  toast.success('Session cleared. Try signing in again.');
+                  setEmail('');
+                  setPassword('');
+                  setMagicLinkSent(false);
+                }}
+              >
+                Trouble signing in? Reset session
+              </button>
             </form>
           )}
         </CardContent>
