@@ -16,6 +16,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [troubleshootOpen, setTroubleshootOpen] = useState(false);
 
   const returnTo = searchParams.get('returnTo') || '/';
 
@@ -60,7 +61,7 @@ export default function Login() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      toast.success('Signed in successfully');
+      toast.success('Signed in');
       handleRedirect();
     } catch (err) {
       toast.error(err.message || 'Sign in failed');
@@ -80,12 +81,21 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOtp({ email });
       if (error) throw error;
       setMagicLinkSent(true);
-      toast.success('Magic link sent! Check your email.');
+      toast.success('Sign-in link sent — check your email.');
     } catch (err) {
-      toast.error(err.message || 'Failed to send magic link');
+      toast.error(err.message || 'Failed to send sign-in link');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetSession = async () => {
+    await clearAuthStorage();
+    toast.success('Session cleared. Try signing in again.');
+    setEmail('');
+    setPassword('');
+    setMagicLinkSent(false);
+    setTroubleshootOpen(false);
   };
 
   return (
@@ -103,7 +113,7 @@ export default function Login() {
           {magicLinkSent ? (
             <div className="text-center space-y-4">
               <p className="text-slate-300">
-                A magic link has been sent to <strong className="text-slate-100">{email}</strong>.
+                A sign-in link has been sent to <strong className="text-slate-100">{email}</strong>.
               </p>
               <p className="text-sm text-slate-400">
                 Check your inbox and click the link to sign in.
@@ -156,38 +166,46 @@ export default function Login() {
                 {loading ? 'Signing in...' : 'Sign In'}
               </Button>
 
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-slate-700" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-slate-900 px-2 text-slate-500">or</span>
-                </div>
+              <div className="pt-2">
+                {!troubleshootOpen ? (
+                  <button
+                    type="button"
+                    className="block w-full text-center text-xs text-slate-500 hover:text-slate-300 underline-offset-4 hover:underline"
+                    onClick={() => setTroubleshootOpen(true)}
+                  >
+                    Trouble signing in?
+                  </button>
+                ) : (
+                  <div className="space-y-3 border-t border-slate-800 pt-4">
+                    <p className="text-xs text-slate-500 text-center">
+                      Forgot your password, or signing in for the first time after your invite expired?
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
+                      disabled={loading}
+                      onClick={handleMagicLink}
+                    >
+                      Email me a one-time sign-in link
+                    </Button>
+                    <button
+                      type="button"
+                      className="block w-full text-center text-xs text-slate-500 hover:text-slate-300 underline-offset-4 hover:underline"
+                      onClick={handleResetSession}
+                    >
+                      Still stuck? Reset session and start over
+                    </button>
+                    <button
+                      type="button"
+                      className="block w-full text-center text-xs text-slate-600 hover:text-slate-400"
+                      onClick={() => setTroubleshootOpen(false)}
+                    >
+                      Hide
+                    </button>
+                  </div>
+                )}
               </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
-                disabled={loading}
-                onClick={handleMagicLink}
-              >
-                Send Magic Link
-              </Button>
-
-              <button
-                type="button"
-                className="w-full text-xs text-slate-500 hover:text-slate-300 mt-2 underline-offset-4 hover:underline"
-                onClick={async () => {
-                  await clearAuthStorage();
-                  toast.success('Session cleared. Try signing in again.');
-                  setEmail('');
-                  setPassword('');
-                  setMagicLinkSent(false);
-                }}
-              >
-                Trouble signing in? Reset session
-              </button>
             </form>
           )}
         </CardContent>

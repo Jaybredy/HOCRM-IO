@@ -8,6 +8,7 @@ import PageNotFound from './lib/PageNotFound';
 import Bookings from './pages/Bookings';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
+import SetPassword from './pages/SetPassword';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -21,7 +22,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, mustChangePassword } = useAuth();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -41,9 +42,17 @@ const AuthenticatedApp = () => {
     }
   }
 
+  // Phase 4 onboarding gate — invitee must replace the temp password
+  // before they can use any other route. /welcome/set-password itself is
+  // exempt so the form can render.
+  if (mustChangePassword && window.location.pathname !== '/welcome/set-password') {
+    return <Navigate to="/welcome/set-password" replace />;
+  }
+
   // Render the main app
   return (
     <Routes>
+      <Route path="/welcome/set-password" element={<SetPassword />} />
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
           <MainPage />

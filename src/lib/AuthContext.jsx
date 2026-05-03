@@ -10,6 +10,11 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingPublicSettings] = useState(false); // No Base44 public settings — always false
   const [authError, setAuthError] = useState(null);
   const [appPublicSettings] = useState({}); // Not used in Supabase migration
+  // Phase 4 onboarding gate: when an invitee signs in with their temp
+  // password, this is true until they set their own password at
+  // /welcome/set-password. Cleared by clearMustChangePassword() once the
+  // user finishes the reset.
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
     checkAppState();
@@ -38,6 +43,7 @@ export const AuthProvider = ({ children }) => {
         if (sessionLost) {
           setUser(null);
           setIsAuthenticated(false);
+          setMustChangePassword(false);
           // Pure wipe — calling clearAuthStorage() here would re-fire
           // SIGNED_OUT via supabase.auth.signOut() and stall the parent
           // logout() flow's window.location.href redirect.
@@ -87,6 +93,11 @@ export const AuthProvider = ({ children }) => {
       });
       setIsAuthenticated(true);
       setAuthError(null);
+
+      // Phase 4: route the invitee through /welcome/set-password until
+      // they replace the temp password we generated for them.
+      const meta = session.user.user_metadata ?? {};
+      setMustChangePassword(meta.must_change_password === true);
     } catch (err) {
       console.error('Failed to load app user:', err);
       setAuthError({
@@ -160,6 +171,10 @@ export const AuthProvider = ({ children }) => {
     window.location.href = `/login?returnTo=${returnTo}`;
   };
 
+  // Called by SetPassword after the user replaces their temp password —
+  // clears the gate so AuthenticatedApp stops redirecting them back.
+  const clearMustChangePassword = () => setMustChangePassword(false);
+
   return (
     <AuthContext.Provider
       value={{
@@ -169,9 +184,11 @@ export const AuthProvider = ({ children }) => {
         isLoadingPublicSettings,
         authError,
         appPublicSettings,
+        mustChangePassword,
         logout,
         navigateToLogin,
         checkAppState,
+        clearMustChangePassword,
       }}
     >
       {children}
