@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Download, X } from "lucide-react";
 import { startOfYear, endOfYear } from "date-fns";
 import { createPageUrl } from "@/utils";
-
-const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
-};
+import { getGreeting, getUserHandle } from "@/lib/greeting";
 
 import KPICards from "../components/crm/KPICards";
 import PipelineChart from "../components/crm/PipelineChart";
@@ -295,7 +289,7 @@ export default function CRM() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-                  {getGreeting()}{user ? `, ${user.display_name || user.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'there'}` : ''}!
+                  {getGreeting()}, {getUserHandle(user)}!
                 </h1>
                 <p className="text-slate-400 mt-1">Track production and manage your sales pipeline</p>
               </div>

@@ -1,6 +1,13 @@
 // Shared greeting helpers — keep page headers consistent.
-// Fallback chain prefers the explicit short handle (display_name) since
-// invitees with full_name like "Test Five" otherwise show as "Test".
+// Fallback chain prefers display_name. full_name's first word is skipped
+// when it's a role placeholder (e.g. "Admin User" → "Admin") to avoid
+// addressing the user by their role. Email prefix strips the +alias
+// suffix Gmail filters add (e.g. "erick+test@gmail.com" → "test"),
+// since the alias is usually the discriminator.
+
+const ROLE_PLACEHOLDERS = new Set([
+  'admin', 'user', 'owner', 'manager', 'staff', 'epic', 'test',
+]);
 
 export function getGreeting() {
   const h = new Date().getHours();
@@ -11,10 +18,19 @@ export function getGreeting() {
 
 export function getUserHandle(user) {
   if (!user) return 'there';
-  return (
-    user.display_name ||
-    user.full_name?.split(' ')[0] ||
-    user.email?.split('@')[0] ||
-    'there'
-  );
+
+  if (user.display_name) return user.display_name;
+
+  const firstName = user.full_name?.trim().split(/\s+/)[0];
+  if (firstName && !ROLE_PLACEHOLDERS.has(firstName.toLowerCase())) {
+    return firstName;
+  }
+
+  const localPart = user.email?.split('@')[0];
+  if (localPart) {
+    const [base, alias] = localPart.split('+');
+    return alias || base;
+  }
+
+  return 'there';
 }

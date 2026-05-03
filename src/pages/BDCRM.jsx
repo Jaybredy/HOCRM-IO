@@ -13,6 +13,7 @@ import BDInsightsSummary from '../components/bd/BDInsightsSummary';
 import BDDateFilter from '../components/bd/BDDateFilter';
 import BDAnalyticsTabs from '../components/bd/BDAnalyticsTabs';
 import BDTimeline from '../components/bd/BDTimeline';
+import { getGreeting, getUserHandle } from '@/lib/greeting';
 
 export default function BDCRM() {
   const [showForm, setShowForm] = useState(false);
@@ -91,12 +92,6 @@ export default function BDCRM() {
     });
   };
 
-  const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
 
   const filterByDate = (leads) => {
     if (dateFilter === 'all') return leads;
@@ -159,7 +154,7 @@ export default function BDCRM() {
               <h1 className="text-4xl font-bold text-white">
                 Business Development CRM
               </h1>
-              <p className="text-cyan-200 mt-1 text-lg">{greeting()}, {user?.full_name || 'there'}! Track your BD pipeline and manage leads.</p>
+              <p className="text-cyan-200 mt-1 text-lg">{getGreeting()}, {getUserHandle(user)}! Track your BD pipeline and manage leads.</p>
             </div>
             <div className="flex gap-3 items-center">
               <BDDateFilter 

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getGreeting, getUserHandle } from "@/lib/greeting";
 import {
   Search, Edit, Trash2, Phone, Mail, ExternalLink,
   UserPlus, Activity, Building2, Upload, Download, Users, Star, TrendingUp, CalendarDays
@@ -244,9 +245,8 @@ export default function Clients() {
     }
   };
 
-  const firstName = (user?.display_name) || user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = getUserHandle(user);
+  const greeting = getGreeting();
 
   const sevenDaysAgo = moment().subtract(7, 'days').startOf('day');
   const filteredProduction = filterProperty === 'all' ? productionItems : productionItems.filter(p => p.hotel_id === filterProperty || p.property_id === filterProperty);

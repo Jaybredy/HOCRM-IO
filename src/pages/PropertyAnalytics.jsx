@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { TrendingUp, Calendar, Building2, DollarSign, Users, Wrench } from "lucide-react";
+import { getGreeting, getUserHandle } from "@/lib/greeting";
 
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -44,9 +45,8 @@ export default function PropertyAnalytics() {
     enabled: hotels.length > 0
   });
 
-  const firstName = (user?.display_name) || user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = getUserHandle(user);
+  const greeting = getGreeting();
 
   // Filter hotels by type
   const filteredHotels = propertyType === 'all' ? hotels : hotels.filter(h => h.id === propertyType);

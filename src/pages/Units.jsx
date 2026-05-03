@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Search, Edit, Trash2, Plus, Building2, User, Calendar, DollarSign, X, Download, Upload } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import ImportTenantsModal from "@/components/rentals/ImportTenantsModal";
+import { getGreeting, getUserHandle } from "@/lib/greeting";
 
 const STATUS_COLORS = {
   available: 'bg-green-100 text-green-800',
@@ -192,9 +193,8 @@ export default function Units() {
     { label: 'Maintenance', value: units.filter(u => u.status === 'maintenance').length, icon: Building2, color: 'text-amber-400', bg: 'bg-amber-400/10' },
   ];
 
-  const firstName = (user?.display_name) || user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = getUserHandle(user);
+  const greeting = getGreeting();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-4 md:p-6">

@@ -225,7 +225,9 @@ export default function UserManagement() {
                     )}
                   </div>
                   <p className="text-xs text-slate-500">
-                    Joined {new Date(user.created_date).toLocaleDateString()}
+                    {user.created_at
+                      ? `Joined ${new Date(user.created_at).toLocaleDateString()}`
+                      : 'Join date unknown'}
                   </p>
                 </CardContent>
               </Card>
