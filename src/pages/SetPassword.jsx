@@ -39,22 +39,41 @@ export default function SetPassword() {
     }
 
     setLoading(true);
+
+    // updateUser awaits the auth-js client lock to release after the PUT
+    // resolves AND the USER_UPDATED listener cascade runs. In practice the
+    // promise can hang here even though the PUT returned 200 and the
+    // session in localStorage already reflects the new metadata. We race
+    // it against a short timeout and hard-redirect either way — the next
+    // page load reads the updated session and routes to dashboard.
     try {
-      const { error: updateError } = await supabase.auth.updateUser({
+      const updatePromise = supabase.auth.updateUser({
         password,
         data: {
           must_change_password: false,
           temp_password_expires_at: null,
         },
       });
-      if (updateError) throw updateError;
+
+      const TIMEOUT_MS = 4000;
+      const result = await Promise.race([
+        updatePromise,
+        new Promise((resolve) => setTimeout(() => resolve({ data: null, error: null, timedOut: true }), TIMEOUT_MS)),
+      ]);
+
+      if (result?.error) {
+        setError(result.error.message);
+        setLoading(false);
+        return;
+      }
 
       clearMustChangePassword();
       toast.success('Password set. Welcome aboard!');
-      navigate('/', { replace: true });
+      // Hard navigate so a fresh AuthProvider mount picks up the new
+      // session metadata cleanly (avoids stuck UI from the lock issue).
+      window.location.replace('/');
     } catch (err) {
       setError(err.message || 'Failed to set password. Try again.');
-    } finally {
       setLoading(false);
     }
   };

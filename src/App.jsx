@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import Bookings from './pages/Bookings';
 import Login from './pages/Login';
@@ -23,6 +23,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, mustChangePassword } = useAuth();
+  const location = useLocation();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -44,8 +45,9 @@ const AuthenticatedApp = () => {
 
   // Phase 4 onboarding gate — invitee must replace the temp password
   // before they can use any other route. /welcome/set-password itself is
-  // exempt so the form can render.
-  if (mustChangePassword && window.location.pathname !== '/welcome/set-password') {
+  // exempt so the form can render. Using useLocation (not window.location)
+  // so the check re-runs on React Router transitions.
+  if (mustChangePassword && location.pathname !== '/welcome/set-password') {
     return <Navigate to="/welcome/set-password" replace />;
   }
 
