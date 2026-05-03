@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     // Load caller's profile
     const { data: callerProfile, error: profileErr } = await supabaseAdmin
       .from('users')
-      .select('id, role')
+      .select('id, role, email, full_name, display_name')
       .eq('email', authUser.email)
       .single();
 
@@ -274,12 +274,17 @@ Deno.serve(async (req) => {
     // inviter can copy/paste it manually if email delivery fails.
     let emailResult = { sent: false, skipped: true } as { sent: boolean; skipped?: boolean; error?: string; resend_id?: string };
     if (magicLink) {
+      const inviterName =
+        callerProfile.display_name?.trim() ||
+        callerProfile.full_name?.trim() ||
+        callerProfile.email ||
+        null;
       emailResult = await sendInviteEmail({
         to: email,
         magicLink,
         hotelName,
         roleLabel: role,
-        inviterName: callerProfile.email ?? null,
+        inviterName,
       });
     }
 
