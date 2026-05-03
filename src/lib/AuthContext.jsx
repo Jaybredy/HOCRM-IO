@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { supabase, clearAuthStorage } from '@/api/base44Client';
+import { supabase, wipeAuthStorage } from '@/api/base44Client';
 
 const AuthContext = createContext();
 
@@ -38,7 +38,10 @@ export const AuthProvider = ({ children }) => {
         if (sessionLost) {
           setUser(null);
           setIsAuthenticated(false);
-          await clearAuthStorage();
+          // Pure wipe — calling clearAuthStorage() here would re-fire
+          // SIGNED_OUT via supabase.auth.signOut() and stall the parent
+          // logout() flow's window.location.href redirect.
+          wipeAuthStorage();
           setAuthError({
             type: 'auth_required',
             message: 'Your session has expired. Please sign in again.',

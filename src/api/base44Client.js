@@ -431,19 +431,10 @@ export const base44 = {
   },
 };
 
-// Sign out locally (this tab) AND remove every Supabase auth key from
-// localStorage. A stale `sb-<project>-auth-token` can outlive a magic-link
-// click and prevent the new session from "winning" — symptoms: invitee
-// clicks the link, lands on the app, but is still seen as the previous
-// user (or stuck not-signed-in). Call from /login mount when there's no
-// valid session, and from the user-facing "Reset session" escape hatch.
-export async function clearAuthStorage() {
-  try {
-    await supabase.auth.signOut({ scope: 'local' });
-  } catch {
-    // signOut can throw if the existing token is malformed — proceed to
-    // wipe localStorage either way.
-  }
+// Remove every Supabase auth key from localStorage. Pure storage wipe —
+// no signOut(), so callers reacting to SIGNED_OUT can use this without
+// re-triggering another SIGNED_OUT and recursing.
+export function wipeAuthStorage() {
   try {
     for (const key of Object.keys(window.localStorage)) {
       if (key.startsWith('sb-')) window.localStorage.removeItem(key);
@@ -451,6 +442,26 @@ export async function clearAuthStorage() {
   } catch {
     // localStorage unavailable (private mode, etc.) — nothing to do.
   }
+}
+
+// Sign out locally (this tab) AND remove every Supabase auth key from
+// localStorage. A stale `sb-<project>-auth-token` can outlive a magic-link
+// click and prevent the new session from "winning" — symptoms: invitee
+// clicks the link, lands on the app, but is still seen as the previous
+// user (or stuck not-signed-in). Call from /login mount when there's no
+// valid session, and from the user-facing "Reset session" escape hatch.
+//
+// DO NOT call from inside an onAuthStateChange SIGNED_OUT handler — the
+// inner signOut() fires SIGNED_OUT recursively and stalls the parent
+// logout() flow. Use wipeAuthStorage() there instead.
+export async function clearAuthStorage() {
+  try {
+    await supabase.auth.signOut({ scope: 'local' });
+  } catch {
+    // signOut can throw if the existing token is malformed — proceed to
+    // wipe localStorage either way.
+  }
+  wipeAuthStorage();
 }
 
 // Also export the raw Supabase client for any direct usage needs
