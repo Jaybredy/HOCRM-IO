@@ -42,8 +42,7 @@ export async function sendInviteEmail(opts: InviteEmailOptions): Promise<{
         : `You've been invited to HOCRM`;
 
   const inviterLine = inviterName ? `${escapeHtml(inviterName)} invited you` : "You've been invited";
-  const roleLine = roleLabel ? ` as <strong>${escapeHtml(roleLabel)}</strong>` : '';
-  const hotelLine = hotelName ? ` at <strong>${escapeHtml(hotelName)}</strong>` : '';
+  const hotelLine = hotelName ? ` to <strong>${escapeHtml(hotelName)}</strong>` : '';
 
   const html = `<!DOCTYPE html>
 <html>
@@ -51,7 +50,7 @@ export async function sendInviteEmail(opts: InviteEmailOptions): Promise<{
     <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px;">
       <h1 style="margin: 0 0 8px; font-size: 22px; color: #0f172a;">Welcome to HOCRM</h1>
       <p style="margin: 0 0 16px; color: #475569; line-height: 1.6;">
-        ${inviterLine}${roleLine}${hotelLine}.
+        ${inviterLine}${hotelLine}.
       </p>
       <div style="margin: 0 0 24px; padding: 12px 16px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; color: #78350f; font-size: 13px; line-height: 1.5;">
         <strong>Heads up:</strong> the sign-in button below works for the next <strong>1 hour</strong>. After that, request a new link from the sign-in page.
@@ -83,7 +82,7 @@ export async function sendInviteEmail(opts: InviteEmailOptions): Promise<{
   </body>
 </html>`;
 
-  const text = `${inviterName ? `${inviterName} invited you` : "You've been invited"}${roleLabel ? ` as ${roleLabel}` : ''}${hotelName ? ` at ${hotelName}` : ''} on HOCRM.
+  const text = `${inviterName ? `${inviterName} invited you` : "You've been invited"}${hotelName ? ` to ${hotelName}` : ''} on HOCRM.
 
 The sign-in link works for the next 1 hour:
 ${magicLink}
