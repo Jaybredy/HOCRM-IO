@@ -19,7 +19,10 @@ export function getGreeting() {
 export function getUserHandle(user) {
   if (!user) return 'there';
 
-  if (user.display_name) return user.display_name;
+  const displayName = user.display_name?.trim();
+  if (displayName && !ROLE_PLACEHOLDERS.has(displayName.toLowerCase())) {
+    return displayName;
+  }
 
   const firstName = user.full_name?.trim().split(/\s+/)[0];
   if (firstName && !ROLE_PLACEHOLDERS.has(firstName.toLowerCase())) {
