@@ -17,19 +17,7 @@
 import { corsHeadersFor } from '../_shared/cors.ts';
 import { getSupabaseClient } from '../_shared/auth.ts';
 import { sendInviteEmail } from '../_shared/resend.ts';
-
-// Phase 4 onboarding: generate a 12-char alphanumeric temp password.
-// Excludes ambiguous chars (0/O, 1/I/l) so the user can copy/type without
-// confusion. No special chars per product decision (paste-friendly, simpler
-// for non-technical invitees).
-const TEMP_PASSWORD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-const TEMP_PASSWORD_TTL_MS = 60 * 60 * 1000; // 1 hour, matches magic-link expiry
-
-function generateTempPassword(length = 12): string {
-  const arr = new Uint8Array(length);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, (b) => TEMP_PASSWORD_CHARS[b % TEMP_PASSWORD_CHARS.length]).join('');
-}
+import { generateTempPassword, tempPasswordExpiresAt } from '../_shared/temp-password.ts';
 
 type Role =
   | 'user'
@@ -174,7 +162,7 @@ Deno.serve(async (req) => {
     // to change on first sign-in. The magic link still works as a recovery
     // path inside the same email.
     const tempPassword = generateTempPassword();
-    const tempPasswordExpiresAt = new Date(Date.now() + TEMP_PASSWORD_TTL_MS).toISOString();
+    const tempPasswordExpiry = tempPasswordExpiresAt();
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -185,7 +173,7 @@ Deno.serve(async (req) => {
         role,
         invited_hotel_id: hotel_id ?? null,
         must_change_password: true,
-        temp_password_expires_at: tempPasswordExpiresAt,
+        temp_password_expires_at: tempPasswordExpiry,
       },
     });
 

@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Mail, Shield, Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Users, Mail, Shield, Plus, KeyRound } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from 'sonner';
 
 const ROLES = [
   { value: 'user', label: 'User' },
@@ -49,6 +50,7 @@ export default function UserManagement() {
   const [editingUser, setEditingUser] = useState(null);
   const [editRole, setEditRole] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [resettingUser, setResettingUser] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -92,6 +94,15 @@ export default function UserManagement() {
       setEditingUser(null);
     },
     onError: (error) => alert(`Error updating role: ${error.message}`)
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (email) => base44.users.resetUserPassword(email),
+    onSuccess: (_data, email) => {
+      toast.success(`Temp password emailed to ${email}. They have 1 hour to sign in and pick a new one.`);
+      setResettingUser(null);
+    },
+    onError: (error) => toast.error(`Reset failed: ${error.message}`),
   });
 
   const handleInvite = (e) => {
@@ -224,17 +235,68 @@ export default function UserManagement() {
                       </button>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500">
-                    {user.created_at
-                      ? `Joined ${new Date(user.created_at).toLocaleDateString()}`
-                      : 'Join date unknown'}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-slate-500">
+                      {user.created_at
+                        ? `Joined ${new Date(user.created_at).toLocaleDateString()}`
+                        : 'Join date unknown'}
+                    </p>
+                    {isAdminRole(currentUser?.role) && user.id !== currentUser?.id && user.email && (
+                      <button
+                        onClick={() => setResettingUser(user)}
+                        className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white underline-offset-4 hover:underline"
+                        title="Send a fresh temp password — the user will be forced to set their own on next sign-in"
+                      >
+                        <KeyRound className="w-3 h-3" />
+                        Reset password
+                      </button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))
           )}
         </div>
       </div>
+
+      {/* Reset Password Confirmation Dialog */}
+      {resettingUser && (
+        <Dialog open={!!resettingUser} onOpenChange={() => !resetPasswordMutation.isPending && setResettingUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset password for {resettingUser.full_name || resettingUser.email}?</DialogTitle>
+              <DialogDescription className="pt-2 space-y-2 text-slate-400">
+                <span className="block">
+                  We'll generate a fresh 12-character temporary password and email it to{' '}
+                  <strong className="text-slate-300">{resettingUser.email}</strong>. The user will be
+                  forced to set their own password the next time they sign in.
+                </span>
+                <span className="block">
+                  Their existing password (if any) stops working immediately. Their active sessions
+                  remain valid until the next token refresh, then they're signed out.
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={resetPasswordMutation.isPending}
+                onClick={() => setResettingUser(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={resetPasswordMutation.isPending}
+                onClick={() => resetPasswordMutation.mutate(resettingUser.email)}
+              >
+                {resetPasswordMutation.isPending ? 'Sending...' : 'Send temp password'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit Role Dialog */}
       {editingUser && (
