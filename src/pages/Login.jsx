@@ -50,10 +50,13 @@ export default function Login() {
     }
   };
 
+  const [signInError, setSignInError] = useState(null);
+
   const handlePasswordSignIn = async (e) => {
     e.preventDefault();
+    setSignInError(null);
     if (!email || !password) {
-      toast.error('Please enter both email and password');
+      setSignInError('Please enter both email and password.');
       return;
     }
 
@@ -64,7 +67,13 @@ export default function Login() {
       toast.success('Signed in');
       handleRedirect();
     } catch (err) {
-      toast.error(err.message || 'Sign in failed');
+      // Surface inline (visible regardless of toast wiring) AND fire a
+      // toast — covers both the Sonner-mounted and not-mounted cases.
+      const msg = err?.message?.toLowerCase().includes('invalid login')
+        ? "That email and password didn't match. Try again, or use the troubleshooting options below."
+        : err?.message || 'Sign in failed';
+      setSignInError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -157,6 +166,15 @@ export default function Login() {
                   autoComplete="current-password"
                 />
               </div>
+
+              {signInError && (
+                <div
+                  role="alert"
+                  className="text-sm text-red-300 bg-red-950/40 border border-red-900 rounded p-2"
+                >
+                  {signInError}
+                </div>
+              )}
 
               <Button
                 type="submit"

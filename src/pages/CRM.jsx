@@ -7,6 +7,7 @@ import { Plus, Download, X } from "lucide-react";
 import { startOfYear, endOfYear } from "date-fns";
 import { createPageUrl } from "@/utils";
 import { getGreeting, getUserHandle } from "@/lib/greeting";
+import { useAuth } from "@/lib/AuthContext";
 
 import KPICards from "../components/crm/KPICards";
 import PipelineChart from "../components/crm/PipelineChart";
@@ -54,15 +55,18 @@ export default function CRM() {
   const [selectedStatus, setSelectedStatus] = useState('definite');
   const [selectedEventType, setSelectedEventType] = useState('');
   const [searchText, setSearchText] = useState('');
-  const [user, setUser] = useState(null);
+  // Source the user from AuthContext (already populated by AuthenticatedApp's
+  // gate before this route mounts). Doing our own base44.auth.me() fetch
+  // here caused a render race: greeting briefly read "there" and bookings
+  // showed 0 until the async fetch resolved — visible after the post-
+  // SetPassword window.location.replace('/').
+  const { user } = useAuth();
   const [drilldownData, setDrilldownData] = useState(null);
   const queryClient = useQueryClient();
 
   const location = useLocation();
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
-
     // Support ?edit=<id> to open a specific item for editing (one-shot, mount-only)
     const urlParams = new URLSearchParams(window.location.search);
     const editId = urlParams.get('edit');
