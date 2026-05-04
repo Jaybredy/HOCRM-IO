@@ -85,12 +85,14 @@ export default function SalesActivities() {
   useEffect(() => {
     base44.auth.me().then(u => {
       setUser(u);
-      const admin = ['admin', 'EPIC_ADMIN'].includes(u?.role);
-      setIsAdmin(admin);
+      // Admins + Hotel Managers can filter by any seller (HM sees their
+      // hotel's team via RLS-scoped activities). Sales Managers and Users
+      // are locked to their own data.
+      const canViewTeam = ['admin', 'EPIC_ADMIN', 'hotel_manager'].includes(u?.role);
+      setIsAdmin(canViewTeam);
       if (u?.full_name) {
         setFormData(prev => ({ ...prev, seller_name: u.full_name }));
-        // Non-admins are locked to their own data
-        if (!admin) setFilterSeller(u.full_name);
+        if (!canViewTeam) setFilterSeller(u.full_name);
       }
     }).catch(() => {});
   }, []);

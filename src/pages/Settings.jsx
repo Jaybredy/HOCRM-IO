@@ -17,6 +17,27 @@ import { useRBAC } from '@/components/rbac/useRBAC';
 import { CAPABILITIES, roleHasCapability } from '@/components/rbac/rbac';
 import PermissionDenied from '@/components/PermissionDenied';
 
+// Role display helpers — kept in sync with UserManagement.jsx.
+const ROLE_LABELS = {
+  admin: 'Epic Admin (Full Access)',
+  EPIC_ADMIN: 'Epic Admin (Full Access)',
+  EPIC_MANAGER: 'Epic Manager',
+  EPIC_VIEWER: 'Epic Viewer',
+  hotel_manager: 'Hotel Manager',
+  sales_manager: 'Sales Manager',
+  user: 'User',
+};
+const getRoleLabel = (role) =>
+  ROLE_LABELS[role] ||
+  (role ? role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'User');
+const getRoleBadgeColor = (role) => {
+  if (role === 'admin' || role === 'EPIC_ADMIN') return 'bg-red-500 text-white';
+  if (role === 'EPIC_MANAGER' || role === 'hotel_manager') return 'bg-purple-500 text-white';
+  if (role === 'sales_manager') return 'bg-blue-500 text-white';
+  if (role === 'EPIC_VIEWER') return 'bg-slate-500 text-white';
+  return 'bg-blue-100 text-blue-800';
+};
+
 export default function Settings() {
   const { user, loading: rbacLoading } = useRBAC();
   const [showHotelForm, setShowHotelForm] = useState(false);
@@ -450,16 +471,18 @@ export default function Settings() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium flex items-center gap-2">
                       <Users className="w-4 h-4 text-gray-400" />
-                      {user.full_name}
+                      {user.full_name || user.display_name || user.email?.split('@')[0]}
                     </TableCell>
                     <TableCell className="text-gray-600">{user.email}</TableCell>
                     <TableCell>
-                      <Badge className={['admin', 'EPIC_ADMIN'].includes(user.role) ? 'bg-red-500 text-white' : 'bg-blue-100 text-blue-800'}>
-                        {['admin', 'EPIC_ADMIN'].includes(user.role) ? 'Administrator' : 'User'}
+                      <Badge className={getRoleBadgeColor(user.role)}>
+                        {getRoleLabel(user.role)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-gray-500 text-sm">
-                      {new Date(user.created_date).toLocaleDateString()}
+                      {user.created_at
+                        ? new Date(user.created_at).toLocaleDateString()
+                        : '—'}
                     </TableCell>
                   </TableRow>
                 ))
