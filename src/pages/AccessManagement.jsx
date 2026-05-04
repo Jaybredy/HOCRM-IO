@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useRBAC } from '@/components/rbac/useRBAC';
@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Shield, Plus, Trash2, Users, Building2, Clock, AlertTriangle, Pencil } from 'lucide-react';
+import { Shield, Plus, Trash2, Users, Building2, Pencil } from 'lucide-react';
+import PermissionDenied from '@/components/PermissionDenied';
 
 export default function AccessManagement() {
   const { user, can, role, properties, loading } = useRBAC();
@@ -124,12 +125,7 @@ export default function AccessManagement() {
   // their hotel via update-user-role + invite-user edge functions, which
   // enforce ROLE_HIERARCHY + has_hotel_write_access(). Surfaced in B-7.g.
   if (!roleHasCapability(user?.role, CAPABILITIES.PLATFORM_ADMIN)) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-8 flex items-center gap-3 text-red-400">
-        <AlertTriangle className="w-5 h-5" />
-        <span>You don't have permission to access this page.</span>
-      </div>
-    );
+    return <PermissionDenied />;
   }
 
   const isPlatformAdmin = can(CAPABILITIES.PLATFORM_ADMIN);

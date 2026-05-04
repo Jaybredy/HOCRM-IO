@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
+import PermissionDenied from "@/components/PermissionDenied";
 
 const ROLES = [
   { value: 'user', label: 'User' },
@@ -124,16 +125,7 @@ export default function UserManagement() {
   const canManageUsers = ['admin', 'EPIC_ADMIN', 'hotel_manager'].includes(currentUser?.role);
 
   if (!canManageUsers) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
-            <p className="text-slate-400">Only administrators can manage users.</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <PermissionDenied message="Only administrators can manage users." />;
   }
 
   return (

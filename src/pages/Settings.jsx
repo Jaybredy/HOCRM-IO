@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Building2, DollarSign, Target, ChevronDown, Users, Mail, Shield, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2, Building2, DollarSign, Target, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BudgetManager from "../components/performance/BudgetManager";
 import ActivityGoalsSettings from "../components/activities/ActivityGoalsSettings";
 import SellerActivityTargets from "../components/performance/SellerActivityTargets";
 import { useRBAC } from '@/components/rbac/useRBAC';
 import { CAPABILITIES, roleHasCapability } from '@/components/rbac/rbac';
+import PermissionDenied from '@/components/PermissionDenied';
 
 export default function Settings() {
   const { user, loading: rbacLoading } = useRBAC();
@@ -147,12 +148,7 @@ export default function Settings() {
   // roleHasCapability (role-only) instead of can() because can() requires a
   // propertyId for hotel-scoped roles. Surfaced in B-7.g.
   if (!roleHasCapability(user?.role, CAPABILITIES.PLATFORM_ADMIN)) {
-    return (
-      <div className="p-8 flex items-center gap-3 text-red-500">
-        <AlertTriangle className="w-5 h-5" />
-        <span>You don't have permission to access this page.</span>
-      </div>
-    );
+    return <PermissionDenied />;
   }
 
   return (
