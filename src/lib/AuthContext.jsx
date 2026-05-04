@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase, wipeAuthStorage } from '@/api/base44Client';
 
 const AuthContext = createContext();
@@ -15,6 +16,14 @@ export const AuthProvider = ({ children }) => {
   // /welcome/set-password. Cleared by clearMustChangePassword() once the
   // user finishes the reset.
   const [mustChangePassword, setMustChangePassword] = useState(false);
+
+  // React Query cache. We invalidate on SIGNED_IN and USER_UPDATED so the
+  // dashboard queries refetch against the new auth/identity state instead
+  // of serving stale cached results from before the sign-in or password
+  // change. Without this, the post-SetPassword hard redirect (Phase 4)
+  // leaves the dashboard rendering with empty bookings + missing hotel
+  // until the user manually reloads.
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     checkAppState();
@@ -48,12 +57,23 @@ export const AuthProvider = ({ children }) => {
           // SIGNED_OUT via supabase.auth.signOut() and stall the parent
           // logout() flow's window.location.href redirect.
           wipeAuthStorage();
+          // Drop any cached query data — RLS-scoped results from the
+          // previous identity would otherwise leak into the next sign-in.
+          queryClient.clear();
           setAuthError({
             type: 'auth_required',
             message: 'Your session has expired. Please sign in again.',
           });
         } else if (session) {
           await loadAppUser(session);
+          // SIGNED_IN: a fresh sign-in just completed. USER_UPDATED:
+          // user_metadata changed (typically the post-SetPassword
+          // must_change_password flip). Either way, force every active
+          // query to refetch against the current session — fixes the
+          // empty-bookings flash after the Phase 4 hard redirect.
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+            queryClient.invalidateQueries();
+          }
         }
       }
     );
@@ -61,7 +81,10 @@ export const AuthProvider = ({ children }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+    // queryClient is a stable reference from QueryClientProvider, but we
+    // still want React's exhaustive-deps lint to be happy.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryClient]);
 
   /**
    * Given a Supabase session, look up the application-level user record
