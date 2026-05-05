@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, CalendarDays, ArrowUpDown, ExternalLink, Download } from "lucide-react";
+import { Search, CalendarDays, ArrowUpDown, ExternalLink, Download, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -184,9 +184,16 @@ export default function Bookings() {
             </h1>
             <p className="text-slate-400 text-sm mt-1">Complete record of all booking entries across all properties</p>
           </div>
-          <Button onClick={() => setShowExportModal(true)} className="bg-emerald-600 hover:bg-emerald-500 text-white gap-2 shrink-0">
-            <Download className="w-4 h-4" /> Export Excel
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button asChild className="bg-blue-600 hover:bg-blue-500 text-white gap-2">
+              <Link to={createPageUrl('CRM') + '#add-production'}>
+                <Plus className="w-4 h-4" /> New Booking
+              </Link>
+            </Button>
+            <Button onClick={() => setShowExportModal(true)} className="bg-emerald-600 hover:bg-emerald-500 text-white gap-2">
+              <Download className="w-4 h-4" /> Export Excel
+            </Button>
+          </div>
         </div>
 
         {/* Summary strip */}
