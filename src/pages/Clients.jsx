@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,7 @@ export default function Clients() {
   const [showImport, setShowImport] = useState(false);
   const [editClient, setEditClient] = useState(null);
   const [formData, setFormData] = useState(BLANK_FORM);
+  const [formError, setFormError] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -113,14 +115,14 @@ export default function Clients() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Client.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['clients'] }); setShowDialog(false); setFormData(BLANK_FORM); },
-    onError: (err) => alert('Failed to create client: ' + (err?.message || 'Unknown error'))
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['clients'] }); setShowDialog(false); setFormData(BLANK_FORM); setFormError(null); },
+    onError: (err) => setFormError('Failed to create client: ' + (err?.message || 'Unknown error'))
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Client.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['clients'] }); setShowDialog(false); setFormData(BLANK_FORM); setEditClient(null); },
-    onError: (err) => alert('Failed to update client: ' + (err?.message || 'Unknown error'))
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['clients'] }); setShowDialog(false); setFormData(BLANK_FORM); setEditClient(null); setFormError(null); },
+    onError: (err) => setFormError('Failed to update client: ' + (err?.message || 'Unknown error'))
   });
 
   const deleteMutation = useMutation({
@@ -132,7 +134,7 @@ export default function Clients() {
   const handleBulkAssign = async () => {
     if (!filterProperty || filterProperty === 'all') return;
     const unlinked = clients.filter(c => !c.property_id);
-    if (unlinked.length === 0) { alert('No unlinked clients to assign.'); return; }
+    if (unlinked.length === 0) { toast.info('No unlinked clients to assign.'); return; }
     if (!confirm(`Assign ${unlinked.length} unlinked client(s) to this property?`)) return;
     setBulkAssigning(true);
     const propertyType = hotels.find(h => h.id === filterProperty) ? 'hotel' : 'rental';
@@ -149,21 +151,25 @@ export default function Clients() {
     setBulkAssigning(false);
     queryClient.invalidateQueries({ queryKey: ['clients'] });
     if (failures.length > 0) {
-      alert(`Assigned ${succeeded} of ${unlinked.length} clients. ${failures.length} failed:\n` +
-            failures.slice(0, 5).map(f => `• ${f.name}: ${f.message}`).join('\n') +
-            (failures.length > 5 ? `\n…and ${failures.length - 5} more.` : ''));
+      const summary = `Assigned ${succeeded} of ${unlinked.length} clients. ${failures.length} failed: ` +
+        failures.slice(0, 3).map(f => f.name).join(', ') +
+        (failures.length > 3 ? `, +${failures.length - 3} more` : '');
+      toast.error(summary);
+    } else {
+      toast.success(`Assigned ${succeeded} client${succeeded === 1 ? '' : 's'} to this property.`);
     }
   };
 
-  const handleEdit = (client) => { setEditClient(client); setFormData(client); setShowDialog(true); };
+  const handleEdit = (client) => { setEditClient(client); setFormData(client); setFormError(null); setShowDialog(true); };
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.property_id) {
-      alert('Please select a property before saving.');
+    setFormError(null);
+    if (!formData.company_name?.trim()) {
+      setFormError('Company name is required.');
       return;
     }
-    if (!formData.company_name?.trim()) {
-      alert('Company name is required.');
+    if (!formData.property_id) {
+      setFormError('Pick a property type, then choose a specific property from the second dropdown before saving.');
       return;
     }
     editClient ? updateMutation.mutate({ id: editClient.id, data: formData }) : createMutation.mutate(formData);
@@ -482,34 +488,35 @@ export default function Clients() {
       />
 
       {/* Create / Edit Dialog */}
-      <Dialog open={showDialog} onOpenChange={(open) => { setShowDialog(open); if (!open) { setFormData(BLANK_FORM); setEditClient(null); } }}>
+      <Dialog open={showDialog} onOpenChange={(open) => { setShowDialog(open); if (!open) { setFormData(BLANK_FORM); setEditClient(null); setFormError(null); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editClient ? 'Edit Client' : 'Create New Client Profile'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              {/* Property selector */}
-              <div className="space-y-2 col-span-2">
+              {/* Property — split into Type (hotel/rental) + Property (specific) */}
+              <div className="space-y-2">
+                <Label>Property Type *</Label>
+                <Select value={formData.property_type} onValueChange={(val) => setFormData({ ...formData, property_type: val, property_id: '' })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hotel">Hotel</SelectItem>
+                    <SelectItem value="rental">Rental</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>Property *</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Select value={formData.property_type} onValueChange={(val) => setFormData({ ...formData, property_type: val, property_id: '' })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hotel">Hotel</SelectItem>
-                      <SelectItem value="rental">Rental</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={formData.property_id} onValueChange={(val) => setFormData({ ...formData, property_id: val })}>
-                    <SelectTrigger><SelectValue placeholder="Select property" /></SelectTrigger>
-                    <SelectContent>
-                      {formData.property_type === 'hotel'
-                        ? hotels.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)
-                        : rentalProperties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)
-                      }
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={formData.property_id} onValueChange={(val) => setFormData({ ...formData, property_id: val })}>
+                  <SelectTrigger><SelectValue placeholder={formData.property_type === 'hotel' ? 'Select a hotel' : 'Select a rental property'} /></SelectTrigger>
+                  <SelectContent>
+                    {formData.property_type === 'hotel'
+                      ? hotels.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)
+                      : rentalProperties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)
+                    }
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -566,6 +573,11 @@ export default function Clients() {
               <Label>Notes</Label>
               <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} />
             </div>
+            {formError && (
+              <div role="alert" className="text-sm text-red-300 bg-red-950/40 border border-red-900 rounded p-2">
+                {formError}
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
               {editClient ? 'Update Client' : 'Create Profile'}
             </Button>

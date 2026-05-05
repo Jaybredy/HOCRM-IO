@@ -12,6 +12,7 @@ export default function ClientSearchSelect({ clients = [], hotels = [], selected
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [newCompany, setNewCompany] = useState('');
+  const [createError, setCreateError] = useState(null);
   const wrapperRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -29,13 +30,26 @@ export default function ClientSearchSelect({ clients = [], hotels = [], selected
   const createClientMutation = useMutation({
     mutationFn: (data) => base44.entities.Client.create(data),
     onSuccess: (newClient) => {
+      // RLS can return an empty result without raising an error (the insert
+      // is silently filtered). Treat a missing record as a failure so the
+      // dialog stops looking like it's still creating.
+      if (!newClient || !newClient.id) {
+        setCreateError(
+          'Could not create the client — your account may not have permission to add clients to this property. Cancel and pick a property you manage, or ask an admin to grant access.'
+        );
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       setQuery(newClient.company_name);
       onSelect({ id: newClient.id, company_name: newClient.company_name });
       setShowCreate(false);
       setNewCompany('');
+      setCreateError(null);
       setOpen(false);
-    }
+    },
+    onError: (err) => {
+      setCreateError(err?.message || 'Failed to create client. Please try again.');
+    },
   });
 
   const handleSelect = (client) => {
@@ -46,6 +60,7 @@ export default function ClientSearchSelect({ clients = [], hotels = [], selected
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
+    setCreateError(null);
     if (!newCompany.trim()) return;
     createClientMutation.mutate({
       company_name: newCompany.trim(),
@@ -104,7 +119,7 @@ export default function ClientSearchSelect({ clients = [], hotels = [], selected
       )}
 
       {/* Create New Client Mini Dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(o) => { setShowCreate(o); if (!o) setCreateError(null); }}>
         <DialogContent className="max-w-sm bg-slate-900 border border-slate-700 text-slate-100">
           <DialogHeader>
             <DialogTitle className="text-white">Create New Client</DialogTitle>
@@ -121,14 +136,23 @@ export default function ClientSearchSelect({ clients = [], hotels = [], selected
                 autoFocus
               />
             </div>
-            {propertyId && (
+            {propertyId ? (
               <p className="text-xs text-slate-400 flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
                 Will be linked to the selected property automatically.
               </p>
+            ) : (
+              <p className="text-xs text-amber-400">
+                No property selected. Pick a property in the form above before creating a client, or open the full Clients page.
+              </p>
+            )}
+            {createError && (
+              <div role="alert" className="text-xs text-red-300 bg-red-950/40 border border-red-900 rounded p-2">
+                {createError}
+              </div>
             )}
             <div className="flex gap-2">
-              <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-500" disabled={createClientMutation.isPending}>
+              <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-500" disabled={createClientMutation.isPending || !propertyId}>
                 {createClientMutation.isPending ? 'Creating...' : 'Create & Select'}
               </Button>
               <Button type="button" variant="outline" onClick={() => setShowCreate(false)} className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
