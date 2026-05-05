@@ -16,6 +16,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [resetLinkSent, setResetLinkSent] = useState(false);
   const [troubleshootOpen, setTroubleshootOpen] = useState(false);
 
   const returnTo = searchParams.get('returnTo') || '/';
@@ -98,12 +99,36 @@ export default function Login() {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast.error('Please enter your email address first');
+      return;
+    }
+    setLoading(true);
+    try {
+      // Recovery email lands on /auth/callback, which forwards to
+      // /welcome/set-password once the recovery session is established.
+      // SetPassword's updateUser({password}) call works for any
+      // authenticated user, not just first-time invitees.
+      const redirectTo = `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent('/welcome/set-password')}`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+      setResetLinkSent(true);
+      toast.success('Password reset link sent — check your email.');
+    } catch (err) {
+      toast.error(err?.message || 'Failed to send reset link');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleResetSession = async () => {
     await clearAuthStorage();
     toast.success('Session cleared. Try signing in again.');
     setEmail('');
     setPassword('');
     setMagicLinkSent(false);
+    setResetLinkSent(false);
     setTroubleshootOpen(false);
   };
 
@@ -196,7 +221,7 @@ export default function Login() {
                 ) : (
                   <div className="space-y-3 border-t border-slate-800 pt-4">
                     <p className="text-xs text-slate-500 text-center">
-                      Forgot your password, or signing in for the first time after your invite expired?
+                      Forgot your password, want to set a new one, or signing in for the first time after your invite expired?
                     </p>
                     <Button
                       type="button"
@@ -207,6 +232,21 @@ export default function Login() {
                     >
                       Email me a one-time sign-in link
                     </Button>
+                    {resetLinkSent ? (
+                      <p className="text-xs text-emerald-400 text-center">
+                        Reset link sent to <strong>{email}</strong>. Check your inbox.
+                      </p>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
+                        disabled={loading}
+                        onClick={handleResetPassword}
+                      >
+                        Reset / set a new password
+                      </Button>
+                    )}
                     <button
                       type="button"
                       className="block w-full text-center text-xs text-slate-500 hover:text-slate-300 underline-offset-4 hover:underline"
