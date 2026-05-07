@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase, clearAuthStorage } from '@/api/base44Client';
 import { toast } from 'sonner';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+const HCAPTCHA_SITEKEY = import.meta.env.VITE_HCAPTCHA_SITEKEY;
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -18,6 +21,20 @@ export default function Login() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [resetLinkSent, setResetLinkSent] = useState(false);
   const [troubleshootOpen, setTroubleshootOpen] = useState(false);
+  const captchaRef = useRef(null);
+
+  // Returns a captcha token by invisibly executing the widget. If the sitekey
+  // isn't configured (local dev without hCaptcha env var), resolves to undefined
+  // — Supabase will accept the call as long as enforcement is also off.
+  const getCaptchaToken = async () => {
+    if (!HCAPTCHA_SITEKEY || !captchaRef.current) return undefined;
+    try {
+      const { response } = await captchaRef.current.execute({ async: true });
+      return response;
+    } finally {
+      captchaRef.current?.resetCaptcha();
+    }
+  };
 
   const returnTo = searchParams.get('returnTo') || '/';
 
@@ -63,7 +80,12 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const captchaToken = await getCaptchaToken();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: { captchaToken },
+      });
       if (error) throw error;
       toast.success('Signed in');
       handleRedirect();
@@ -88,7 +110,11 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      const captchaToken = await getCaptchaToken();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { captchaToken },
+      });
       if (error) throw error;
       setMagicLinkSent(true);
       toast.success('Sign-in link sent — check your email.');
@@ -111,7 +137,8 @@ export default function Login() {
       // SetPassword's updateUser({password}) call works for any
       // authenticated user, not just first-time invitees.
       const redirectTo = `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent('/welcome/set-password')}`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      const captchaToken = await getCaptchaToken();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo, captchaToken });
       if (error) throw error;
       setResetLinkSent(true);
       toast.success('Password reset link sent — check your email.');
@@ -144,6 +171,14 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {HCAPTCHA_SITEKEY && (
+            <HCaptcha
+              ref={captchaRef}
+              sitekey={HCAPTCHA_SITEKEY}
+              size="invisible"
+              theme="dark"
+            />
+          )}
           {magicLinkSent ? (
             <div className="text-center space-y-4">
               <p className="text-slate-300">
