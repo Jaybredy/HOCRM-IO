@@ -17,7 +17,7 @@ const ROLES = [
   { value: 'admin', label: 'Epic Admin (Full Access)' },
   { value: 'hotel_manager', label: 'Hotel Manager' },
   { value: 'sales_manager', label: 'Sales Manager' },
-  { value: 'EPIC_MANAGER', label: 'Epic Manager (multi-hotel)' },
+  { value: 'EPIC_MANAGER', label: 'HOCRM-Auditor' },
   { value: 'EPIC_VIEWER', label: 'Epic Viewer (read-only)' },
 ];
 

@@ -390,7 +390,7 @@ export default function AccessManagement() {
                           <SelectTrigger className="h-7 w-52 text-xs bg-white border-slate-300 text-slate-900"><SelectValue /></SelectTrigger>
                           <SelectContent className="bg-white border-slate-200">
                             <SelectItem value="admin" className="text-slate-900 focus:bg-slate-100">Epic Admin – Full access including AI</SelectItem>
-                            <SelectItem value="EPIC_MANAGER" className="text-slate-900 focus:bg-slate-100">Epic Manager – Full access, no AI</SelectItem>
+                            <SelectItem value="EPIC_MANAGER" className="text-slate-900 focus:bg-slate-100">HOCRM-Auditor – Full access, no AI</SelectItem>
                             <SelectItem value="hotel_manager" className="text-slate-900 focus:bg-slate-100">Hotel Manager</SelectItem>
                             <SelectItem value="sales_manager" className="text-slate-900 focus:bg-slate-100">Sales Manager</SelectItem>
                             <SelectItem value="EPIC_CONTRIBUTOR" className="text-slate-900 focus:bg-slate-100">Epic Contributor – Create & edit, no delete</SelectItem>
@@ -507,7 +507,7 @@ export default function AccessManagement() {
                                   <SelectContent className="bg-white border-slate-200">
                                     <SelectItem value="hotel_manager" className="text-slate-900 focus:bg-slate-100">Hotel Manager</SelectItem>
                                     <SelectItem value="sales_manager" className="text-slate-900 focus:bg-slate-100">Sales Manager</SelectItem>
-                                    <SelectItem value="EPIC_MANAGER" className="text-slate-900 focus:bg-slate-100">Epic Manager</SelectItem>
+                                    <SelectItem value="EPIC_MANAGER" className="text-slate-900 focus:bg-slate-100">HOCRM-Auditor</SelectItem>
                                     <SelectItem value="EPIC_CONTRIBUTOR" className="text-slate-900 focus:bg-slate-100">Epic Contributor</SelectItem>
                                     <SelectItem value="EPIC_VIEWER" className="text-slate-900 focus:bg-slate-100">Epic Viewer</SelectItem>
                                   </SelectContent>
@@ -601,7 +601,7 @@ export default function AccessManagement() {
                                 <SelectContent className="bg-white border-slate-200">
                                   <SelectItem value="hotel_manager" className="text-slate-900 focus:bg-slate-100">Hotel Manager</SelectItem>
                                   <SelectItem value="sales_manager" className="text-slate-900 focus:bg-slate-100">Sales Manager</SelectItem>
-                                  <SelectItem value="EPIC_MANAGER" className="text-slate-900 focus:bg-slate-100">Epic Manager</SelectItem>
+                                  <SelectItem value="EPIC_MANAGER" className="text-slate-900 focus:bg-slate-100">HOCRM-Auditor</SelectItem>
                                   <SelectItem value="EPIC_CONTRIBUTOR" className="text-slate-900 focus:bg-slate-100">Epic Contributor</SelectItem>
                                   <SelectItem value="EPIC_VIEWER" className="text-slate-900 focus:bg-slate-100">Epic Viewer</SelectItem>
                                 </SelectContent>
@@ -706,7 +706,7 @@ export default function AccessManagement() {
                 <SelectContent className="bg-white border-slate-200">
                   <SelectItem value="hotel_manager" className="text-slate-900 focus:bg-slate-100">Hotel Manager – Full control (delete, settings)</SelectItem>
                   <SelectItem value="sales_manager" className="text-slate-900 focus:bg-slate-100">Sales Manager – Create & edit clients/bookings</SelectItem>
-                  <SelectItem value="EPIC_MANAGER" className="text-slate-900 focus:bg-slate-100">Epic Manager – Full access, no AI</SelectItem>
+                  <SelectItem value="EPIC_MANAGER" className="text-slate-900 focus:bg-slate-100">HOCRM-Auditor – Full access, no AI</SelectItem>
                   <SelectItem value="EPIC_CONTRIBUTOR" className="text-slate-900 focus:bg-slate-100">Epic Contributor – Create & edit, no delete</SelectItem>
                   <SelectItem value="EPIC_VIEWER" className="text-slate-900 focus:bg-slate-100">Epic Viewer – View only</SelectItem>
                 </SelectContent>

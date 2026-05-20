@@ -21,7 +21,7 @@ import PermissionDenied from '@/components/PermissionDenied';
 const ROLE_LABELS = {
   admin: 'Epic Admin (Full Access)',
   EPIC_ADMIN: 'Epic Admin (Full Access)',
-  EPIC_MANAGER: 'Epic Manager',
+  EPIC_MANAGER: 'HOCRM-Auditor',
   EPIC_VIEWER: 'Epic Viewer',
   hotel_manager: 'Hotel Manager',
   sales_manager: 'Sales Manager',

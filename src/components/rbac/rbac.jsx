@@ -215,7 +215,7 @@ export const ROLE_LABELS = {
   sales_manager:  'Sales Manager',
   user:           'User',
   EPIC_ADMIN:     'Epic Admin',
-  EPIC_MANAGER:       'Epic Manager',
+  EPIC_MANAGER:       'HOCRM-Auditor',
   EPIC_CONTRIBUTOR:   'Epic Contributor',
   EPIC_VIEWER:        'Epic Viewer',
   CLIENT_MANAGER: 'Client Manager',
